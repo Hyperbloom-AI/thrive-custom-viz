@@ -92,7 +92,7 @@ looker.plugins.visualizations.add({
                 .attr("transform", "translate(0," + height + ")")
                 .call(d3.axisBottom(x))
                 .selectAll("text")
-                .attr("transform", "translate(-5,0)rotate(-45)")
+                .attr("transform", "translate(-5,5)rotate(-45)")
                 .style("text-anchor", "end")
                 .style("font-family", "Roboto Mono")
                 .style("font-weight", "700")

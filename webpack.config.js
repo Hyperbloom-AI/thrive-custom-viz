@@ -17,6 +17,7 @@ var webpackConfig = {
     custom_intent_table: './src/visualizations/custom_intent_table/custom_intent_table.js',
     custom_companies_synopsis: './src/visualizations/custom_companies_synopsis/custom_companies_synopsis.js',
     custom_intent_synopsis: './src/visualizations/custom_intent_synopsis/custom_intent_synopsis.js',
+    custom_company_headcount: './src/visualizations/company_headcount/company_headcount.js',
   },
   output: {
     filename: "[name].js",
