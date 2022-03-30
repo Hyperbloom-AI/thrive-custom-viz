@@ -55,13 +55,10 @@ looker.plugins.visualizations.add({
     updateAsync: function (data, element, config, queryResponse, details, done) {
 
         var parentDiv = document.getElementById("vis");
-        console.log(parentDiv)
 
         d3.select("div").html("");
         // Clear any errors from previous updates
         this.clearErrors(queryResponse.fields);
-
-        console.log(queryResponse)
 
         if (queryResponse.fields.measures.length == 0 || queryResponse.fields.dimensions.length == 0) {
             this.addError({ title: "No Measures or Dimensions", message: "This chart requires a measure and a dimension." });
@@ -143,7 +140,7 @@ looker.plugins.visualizations.add({
                 .attr("x", function (d) { return x(d[dimensionName].value); })
                 .attr("y", function (d) { return y(d[measureName].value); })
                 .attr("width", x.bandwidth())
-                .attr("height", function (d) { console.log(y(d[measureName].value));return height - y(d[measureName].value); })
+                .attr("height", function (d) { return height - y(d[measureName].value); })
                 .attr("fill", "#b3121f")
 
         // Throw some errors and exit if the shape of the data isn't what this chart needs

@@ -55,7 +55,6 @@ looker.plugins.visualizations.add({
     updateAsync: function (data, element, config, queryResponse, details, done) {
 
         var parentDiv = document.getElementById("vis");
-        console.log(parentDiv)
 
         d3.select("div").html("");
         document.getElementById("vis").innerHTML = ""
@@ -96,33 +95,14 @@ looker.plugins.visualizations.add({
         // Parse the Data
             // X axis
 
-            /*var x = d3.scaleBand()
-                .range([0, width])
-                .domain(data.map(function (d) { return d["dim_zi_intent_metrics.topic"].value }))
-                .padding(0.2);*/
-
             var y = d3.scaleBand()
                 .range([0, height])
                 .domain(data.map(function (d) { return d[dimensionName].value }))
                 .padding(0.2);
 
-            /*var y = d3.scaleLinear()
-                .domain([0, d3.max(data.map(function(d) { return d["dim_zi_intent_metrics.provided_kpi"].value}))])
-                .range([height, 0])*/
-
             var x = d3.scaleLinear()
                 .domain([0, d3.max(data.map(function(d) { return d[measureName].value}))])
                 .range([0, width])
-
-            /*svg.append("g")
-                .attr("transform", "translate(0," + height + ")")
-                .call(d3.axisBottom(x))
-                .selectAll("text")
-                .style("text-anchor", "end")
-                .style("font-family", "Roboto Mono")
-                .style("font-weight", "700")
-                .attr("fill", "#151313")
-                .attr("font-size", "9.47368px");*/
 
             // X Axis G element
             let axisBottom = d3.axisBottom(x)
@@ -137,15 +117,6 @@ looker.plugins.visualizations.add({
                 .style("font-weight", "700")
                 .attr("fill", "#151313")
                 .attr("font-size", "9.5px");
-
-            /*svg.append("g")
-                .call(d3.axisLeft(y))
-                .selectAll("text")
-                .style("text-anchor", "end")
-                .style("font-family", "Roboto Mono")
-                .style("font-weight", "700")
-                .attr("fill", "#151313")
-                .attr("font-size", "9.5px");*/
 
             // Y Axis G element
             svg.append("g")
@@ -174,17 +145,6 @@ looker.plugins.visualizations.add({
                 .attr("height", y.bandwidth())
                 .attr("width", function (d) { return x(d[measureName].value); })
                 .attr("fill", "#b3121f")
-
-            /*svg.selectAll("mybar")
-                .data(data)
-                .enter()
-                .append("rect")
-                .attr("x", function (d) { return x(d["dim_zi_intent_metrics.topic"].value); })
-                .attr("y", function (d) { return y(d["dim_zi_intent_metrics.provided_kpi"].value); })
-                .attr("width", x.bandwidth())
-                .attr("height", function (d) { console.log(y(d["dim_zi_intent_metrics.provided_kpi"].value));return height - y(d["dim_zi_intent_metrics.provided_kpi"].value); })
-                .attr("fill", "#b3121f")
-            */
 
         // Throw some errors and exit if the shape of the data isn't what this chart needs
         if (queryResponse.fields.measures.length == 0) {
