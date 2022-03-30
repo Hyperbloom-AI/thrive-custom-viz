@@ -47,6 +47,18 @@ looker.plugins.visualizations.add({
               width: 100%;
               margin: 0
             }
+
+            .tooltip-donut {
+                position: absolute;
+                text-align: center;
+                padding: .5rem;
+                background: #FFFFFF;
+                color: #313639;
+                border: 1px solid #313639;
+                border-radius: 8px;
+                pointer-events: none;
+                font-size: 1.3rem;
+            }
         </style>
       `;
         // Create a container element to let us center the text.
@@ -57,6 +69,44 @@ looker.plugins.visualizations.add({
         var parentDiv = document.getElementById("vis");
 
         d3.select("div").html("");
+
+        element.innerHTML = `
+        <style>
+
+            @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');
+
+            * {
+              box-sizing: border-box;
+            }
+
+            html, body, #vis {
+              height: 100%;
+              margin: 0;
+              padding: 0;
+              border: none;
+            }
+
+            #vis {
+              height: 100%;
+              width: 100%;
+              margin: 0
+            }
+
+            .tooltip-donut {
+                position: absolute;
+                text-align: center;
+                padding: 15px;
+                background: #FFFFFF;
+                color: #313639;
+                pointer-events: none;
+                font-size: 1.3rem;
+                box-shadow: 3px 3px 4px 0px #46464666;
+                border-radius: 3px
+            }
+        </style>`
+
+        
         // Clear any errors from previous updates
         this.clearErrors(queryResponse.fields);
 
@@ -91,57 +141,87 @@ looker.plugins.visualizations.add({
             .attr('type', 'text/css')
             .text("@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');");
 
-        // Parse the Data
-            // X axis
-            var x = d3.scaleBand()
-                .range([0, width])
-                .domain(data.map(function (d) { return d[dimensionName].value }))
-                .padding(0.2);
-
-            svg.append("g")
-                .attr("transform", "translate(0," + height + ")")
-                .call(d3.axisBottom(x))
-                .selectAll("text")
-                .attr("transform", "translate(-5,5)rotate(-45)")
-                .style("text-anchor", "end")
-                .style("font-family", "Roboto Mono")
-                .style("font-weight", "700")
-                .attr("fill", "#151313")
-                .attr("font-size", "9.47368px");
-            // Add Y axis
-            var y = d3.scaleLinear()
-                .domain([0, d3.max(data.map(function(d) { return d[measureName].value}))])
-                .range([height, 0])
-
-            let axisLeft = d3.axisLeft(y)
-            axisLeft.ticks(3)
-
-            svg.append("g")
-                .call(axisLeft)
-                .selectAll("text")
-                .style("font-family", "Roboto Mono")
-                .style("font-weight", "700")
-                .attr("fill", "#151313")
-                .attr("font-size", "13px");
+        var div = d3.select("div").append("div")
+            .attr("class", "tooltip-donut")
+            .style("display", "none")
 
 
-            svg.selectAll(".tick")
-                .selectAll("line")
-                .attr("stroke", "none")
+        var x = d3.scaleBand()
+            .range([0, width])
+            .domain(data.map(function (d) { return d[dimensionName].value }))
+            .padding(0.2);
 
-            svg.selectAll("path.domain")
-                .attr("stroke", "none")
+        svg.append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x))
+            .selectAll("text")
+            .attr("transform", "translate(-5,5)rotate(-45)")
+            .style("text-anchor", "end")
+            .style("font-family", "Roboto Mono")
+            .style("font-weight", "700")
+            .attr("fill", "#151313")
+            .attr("font-size", "9.47368px");
+        // Add Y axis
+        var y = d3.scaleLinear()
+            .domain([0, d3.max(data.map(function(d) { return d[measureName].value}))])
+            .range([height, 0])
 
-            // Bars
-            svg.selectAll("mybar")
-                .data(data)
-                .enter()
-                .append("rect")
-                .attr("x", function (d) { return x(d[dimensionName].value); })
-                .attr("y", function (d) { return y(d[measureName].value); })
-                .attr("width", x.bandwidth())
-                .attr("height", function (d) { return height - y(d[measureName].value); })
-                .attr("fill", "#b3121f")
+        let axisLeft = d3.axisLeft(y)
+        axisLeft.ticks(3)
+
+        svg.append("g")
+            .call(axisLeft)
+            .selectAll("text")
+            .style("font-family", "Roboto Mono")
+            .style("font-weight", "700")
+            .attr("fill", "#151313")
+            .attr("font-size", "13px");
+
+
+        svg.selectAll(".tick")
+            .selectAll("line")
+            .attr("stroke", "none")
+
+        svg.selectAll("path.domain")
+            .attr("stroke", "none")
+
+        // Bars
+        svg.selectAll("mybar")
+            .data(data)
+            .enter()
+            .append("rect")
+            .attr("x", function (d) { return x(d[dimensionName].value); })
+            .attr("y", function (d) { return y(d[measureName].value); })
+            .attr("width", x.bandwidth())
+            .attr("height", function (d) { return height - y(d[measureName].value); })
+            .attr("fill", "#b3121f")
+            .on('mouseover', function (d, i) {
+                d3.select(this).transition()
+                    .duration(50)
+                    .style('opacity', 0.85);
+
+                // Makes the new div appear on hover:
+                div.transition()
+                    .duration(50)
+                    .style("display", "block");
+
+                console.log(d3.event.pageX + 10 + " : " + width)
+                console.log(d3.event.pageX + 10 > width)
+                console.log(d3.event.pageX + 10 > width ? d3.event.pageX + 10 : width)
+
+                div.html(d[dimensionName].value)
+                    .style("left", ((d3.event.pageX + 10) > width - 25 ? width : d3.event.pageX + 10) + "px")
+                    .style("top", (d3.event.pageY) + "px");
+            })
+            .on('mouseout', function (d, i) {
+                d3.select(this).transition()
+                    .duration(50)
+                    .style('opacity', 1);
+
+                div.transition()
+                    .delay(250)
+                    .style('display', "none");
+            })
 
         // Throw some errors and exit if the shape of the data isn't what this chart needs
         if (queryResponse.fields.measures.length == 0) {
