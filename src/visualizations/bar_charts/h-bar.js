@@ -112,12 +112,16 @@ looker.plugins.visualizations.add({
                 .attr("fill", "#151313")
                 .attr("font-size", "9.47368px");
 
+
+            // X Axis G element
+            let axisLeft = d3.axisBottom(y)
+            axisLeft.ticks(3)
             // Add Y axis
             var y = d3.scaleLinear()
                 .domain([0, d3.max(data.map(function(d) { return d[measureName].value}))])
                 .range([height, 0])
             svg.append("g")
-                .call(d3.axisLeft(y))
+                .call(axisLeft)
                 .selectAll("text")
                 .style("font-family", "Roboto Mono")
                 .style("font-weight", "700")
