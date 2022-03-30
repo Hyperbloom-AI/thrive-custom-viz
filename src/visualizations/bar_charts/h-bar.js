@@ -114,7 +114,7 @@ looker.plugins.visualizations.add({
 
 
             // X Axis G element
-            let axisLeft = d3.axisBottom(y)
+            let axisLeft = d3.axisLeft(y)
             axisLeft.ticks(3)
             // Add Y axis
             var y = d3.scaleLinear()
