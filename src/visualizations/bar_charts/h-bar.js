@@ -115,6 +115,10 @@ looker.plugins.visualizations.add({
             var y = d3.scaleLinear()
                 .domain([0, d3.max(data.map(function(d) { return d[measureName].value}))])
                 .range([height, 0])
+
+            let axisLeft = d3.axisLeft(y)
+            axisLeft.ticks(3)
+
             svg.append("g")
                 .call(axisLeft)
                 .selectAll("text")
@@ -123,8 +127,6 @@ looker.plugins.visualizations.add({
                 .attr("fill", "#151313")
                 .attr("font-size", "13px");
 
-            let axisLeft = d3.axisLeft(y)
-            axisLeft.ticks(3)
 
             svg.selectAll(".tick")
                 .selectAll("line")
