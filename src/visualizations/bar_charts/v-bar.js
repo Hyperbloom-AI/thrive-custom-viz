@@ -58,12 +58,24 @@ looker.plugins.visualizations.add({
         console.log(parentDiv)
 
         d3.select("div").html("");
+        document.getElementById("vis").innerHTML = ""
         // Clear any errors from previous updates
         this.clearErrors(queryResponse.fields);
 
-        console.log(data)
+        if (queryResponse.fields.measures.length == 0 || queryResponse.fields.dimensions.length == 0) {
+            this.addError({ title: "No Measures or Dimensions", message: "This chart requires a measure and a dimension." });
+            return;
+        }
 
-        var margin = { top: 0, right: 60, bottom: 20, left: 200 },
+        var dimension = queryResponse.fields.dimensions[0]
+        var measure = queryResponse.fields.measures[0]
+
+        var dimensionName = dimension.name
+        var dimensionLabel = dimension.label
+        var measureName = measure.name
+        var measureLabel = measure.label
+
+        var margin = { top: 0, right: 60, bottom: 20, left: parentDiv.clientWidth * 0.4  },
             width = parentDiv.clientWidth - margin.left - margin.right,
             height = parentDiv.clientHeight - margin.top - margin.bottom;
 
@@ -91,7 +103,7 @@ looker.plugins.visualizations.add({
 
             var y = d3.scaleBand()
                 .range([0, height])
-                .domain(data.map(function (d) { return d["dim_zi_intent_metrics.topic"].value }))
+                .domain(data.map(function (d) { return d[dimensionName].value }))
                 .padding(0.2);
 
             /*var y = d3.scaleLinear()
@@ -99,7 +111,7 @@ looker.plugins.visualizations.add({
                 .range([height, 0])*/
 
             var x = d3.scaleLinear()
-                .domain([0, d3.max(data.map(function(d) { return d["dim_zi_intent_metrics.provided_kpi"].value}))])
+                .domain([0, d3.max(data.map(function(d) { return d[measureName].value}))])
                 .range([0, width])
 
             /*svg.append("g")
@@ -113,9 +125,12 @@ looker.plugins.visualizations.add({
                 .attr("font-size", "9.47368px");*/
 
             // X Axis G element
+            let axisBottom = d3.axisBottom(x)
+            axisBottom.ticks(5)
+
             svg.append("g")
                 .attr("transform", "translate(0," + height + ")")
-                .call(d3.axisBottom(x))
+                .call(axisBottom)
                 .selectAll("text")
                 .style("text-anchor", "middle")
                 .style("font-family", "Roboto Mono")
@@ -154,10 +169,10 @@ looker.plugins.visualizations.add({
                 .data(data)
                 .enter()
                 .append("rect")
-                .attr("y", function (d) { return y(d["dim_zi_intent_metrics.topic"].value); })
+                .attr("y", function (d) { return y(d[dimensionName].value); })
                 .attr("x", function (d) { return x(0); })
                 .attr("height", y.bandwidth())
-                .attr("width", function (d) { console.log(x(d["dim_zi_intent_metrics.provided_kpi"].value));return x(d["dim_zi_intent_metrics.provided_kpi"].value); })
+                .attr("width", function (d) { return x(d[measureName].value); })
                 .attr("fill", "#b3121f")
 
             /*svg.selectAll("mybar")

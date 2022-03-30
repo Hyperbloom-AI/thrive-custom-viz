@@ -14,6 +14,7 @@ var webpackConfig = {
     custom_company_headcount: './src/visualizations/company_headcount/h-bar.js',
     custom_intent_topic: './src/visualizations/custom_intent_topic/v-bar.js',
     horizontal_bar: './src/visualizations/bar_charts/h-bar.js',
+    vertical_bar: './src/visualizations/bar_charts/v-bar.js',
   },
   output: {
     filename: "[name].js",
