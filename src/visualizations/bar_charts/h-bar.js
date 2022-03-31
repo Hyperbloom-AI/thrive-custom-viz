@@ -1,6 +1,7 @@
 import * as d3 from 'd3'
 
 function numberWithCommas(x) {
+    x = x.toFixed(2)
     var parts = x.toString().split(".");
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     return parts.join(".");

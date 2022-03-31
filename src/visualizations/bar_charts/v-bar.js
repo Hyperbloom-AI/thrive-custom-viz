@@ -1,6 +1,7 @@
 import * as d3 from 'd3'
 
 function numberWithCommas(x) {
+    x = x.toFixed(2)
     var parts = x.toString().split(".");
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     return parts.join(".");
@@ -176,7 +177,7 @@ looker.plugins.visualizations.add({
 
             // X Axis G element
             let axisBottom = d3.axisBottom(x)
-            axisBottom.ticks(5)
+            axisBottom.ticks(3)
 
             svg.append("g")
                 .attr("transform", "translate(0," + height + ")")
