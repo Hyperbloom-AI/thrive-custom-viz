@@ -47,8 +47,25 @@ looker.plugins.visualizations.add({
               width: 100%;
               margin: 0
             }
-        </style>
-      `;
+
+            .tooltip {
+                position: absolute;
+                text-align: left;
+                padding: 12px;
+                background: #FFFFFF;
+                color: #313639;
+                pointer-events: none;
+                font-size: 1.3rem;
+                box-shadow: 3px 3px 4px 0px #46464666;
+                border-radius: 3px;
+                font: 10px/12px 'Roboto Mono', monospace;
+                transition-duration: 250ms;
+            }
+
+            .tooltip-dimension-value, .tooltip-measure-value {
+                font-weight: 700
+            }
+        </style>`;
         // Create a container element to let us center the text.
     },
     // Render in response to the data or settings changing
@@ -58,6 +75,48 @@ looker.plugins.visualizations.add({
 
         d3.select("div").html("");
         document.getElementById("vis").innerHTML = ""
+
+        element.innerHTML = `
+        <style>
+
+            @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');
+
+            * {
+              box-sizing: border-box;
+            }
+
+            html, body, #vis {
+              height: 100%;
+              margin: 0;
+              padding: 0;
+              border: none;
+            }
+
+            #vis {
+              height: 100%;
+              width: 100%;
+              margin: 0
+            }
+
+            .tooltip {
+                position: absolute;
+                text-align: left;
+                padding: 12px;
+                background: #FFFFFF;
+                color: #313639;
+                pointer-events: none;
+                font-size: 1.3rem;
+                box-shadow: 3px 3px 4px 0px #46464666;
+                border-radius: 3px;
+                font: 10px/12px 'Roboto Mono', monospace;
+                transition-duration: 250ms;
+            }
+
+            .tooltip-dimension-value, .tooltip-measure-value {
+                font-weight: 700
+            }
+        </style>`;
         // Clear any errors from previous updates
         this.clearErrors(queryResponse.fields);
 
@@ -70,9 +129,9 @@ looker.plugins.visualizations.add({
         var measure = queryResponse.fields.measures[0]
 
         var dimensionName = dimension.name
-        var dimensionLabel = dimension.label
+        var dimensionLabel = dimension.label_short
         var measureName = measure.name
-        var measureLabel = measure.label
+        var measureLabel = measure.label_short
 
         var margin = { top: 0, right: 60, bottom: 20, left: parentDiv.clientWidth * 0.5  },
             width = parentDiv.clientWidth - margin.left - margin.right,
@@ -90,6 +149,18 @@ looker.plugins.visualizations.add({
             .append('style')
             .attr('type', 'text/css')
             .text("@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');");
+
+        var div = d3.select("div").append("div")
+            .attr("class", "tooltip")
+            .style("display", "none");
+        
+        var dimensionTooltip = d3.select(".tooltip")
+            .append('div')
+            .attr('class', 'tooltip-dimension')
+
+        var measureTooltip = d3.select(".tooltip")
+            .append('div')
+            .attr('class', 'tooltip-measure')
 
         // Parse the Data
             // X axis
@@ -144,6 +215,33 @@ looker.plugins.visualizations.add({
                 .attr("height", y.bandwidth())
                 .attr("width", function (d) { return x(d[measureName].value); })
                 .attr("fill", "#b3121f")
+                .on('mouseover', function (d, i) {
+                    d3.select(this).transition()
+                        .duration(50)
+                        .style('opacity', 0.85);
+    
+                    // Makes the new div appear on hover:
+                    div.transition()
+                        .duration(50)
+                        .style("display", "block");
+    
+                    console.log(d3.event.pageY + 10 + " : " + height)
+    
+                    dimensionTooltip.html(`<span class="tooltip-dimension-label">${dimensionLabel}: </span><span class="tooltip-dimension-value">${d[dimensionName].value}</span>`)
+                    measureTooltip.html(`<span class="tooltip-dimension-label">${measureLabel}: </span><span class="tooltip-dimension-value">${numberWithCommas(d[measureName].value)}</span>`)
+    
+                    div.style("left", ((d3.event.pageX + 10) > width - 35 ? width : d3.event.pageX + 10) + "px")
+                        .style("top", ((d3.event.pageY + 15) > height -35 ? height - 35 : d3.event.pageY + 15) + "px");
+                })
+                .on('mouseout', function (d, i) {
+                    d3.select(this).transition()
+                        .duration(50)
+                        .style('opacity', 1);
+    
+                    div.transition()
+                        .delay(250)
+                        .style('display', "none");
+                })
 
         // Throw some errors and exit if the shape of the data isn't what this chart needs
         if (queryResponse.fields.measures.length == 0) {

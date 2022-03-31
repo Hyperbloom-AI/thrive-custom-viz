@@ -50,17 +50,22 @@ looker.plugins.visualizations.add({
 
             .tooltip {
                 position: absolute;
-                text-align: center;
-                padding: .5rem;
+                text-align: left;
+                padding: 12px;
                 background: #FFFFFF;
                 color: #313639;
-                border: 1px solid #313639;
-                border-radius: 8px;
                 pointer-events: none;
                 font-size: 1.3rem;
+                box-shadow: 3px 3px 4px 0px #46464666;
+                border-radius: 3px;
+                font: 10px/12px 'Roboto Mono', monospace;
+                transition-duration: 250ms;
             }
-        </style>
-      `;
+
+            .tooltip-dimension-value, .tooltip-measure-value {
+                font-weight: 700
+            }
+        </style>`;
         // Create a container element to let us center the text.
     },
     // Render in response to the data or settings changing
@@ -107,7 +112,7 @@ looker.plugins.visualizations.add({
                 transition-duration: 250ms;
             }
 
-            .tooltip-dimension-value {
+            .tooltip-dimension-value, .tooltip-measure-value {
                 font-weight: 700
             }
         </style>`
