@@ -197,7 +197,7 @@ looker.plugins.visualizations.add({
             .style("font-family", "Roboto Mono")
             .style("font-weight", "700")
             .attr("fill", "#151313")
-            .attr("font-size", "13px");
+            .attr("font-size", "11px");
 
 
         svg.selectAll(".tick")
