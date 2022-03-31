@@ -84,8 +84,7 @@ looker.plugins.visualizations.add({
             .attr("width", width + margin.left + margin.right)
             .attr("height", height + margin.top + margin.bottom)
             .append("g")
-            .attr("transform",
-                "translate(" + margin.left + "," + margin.top + ")");
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
         svg.append('defs')
             .append('style')
@@ -101,7 +100,7 @@ looker.plugins.visualizations.add({
                 .padding(0.2);
 
             var x = d3.scaleLinear()
-                .domain([0, d3.max(data.map(function(d) { return d[measureName].value}))])
+                .domain([0, d3.max(data.map(function(d) { return d[measureName].value }))])
                 .range([0, width])
 
             // X Axis G element

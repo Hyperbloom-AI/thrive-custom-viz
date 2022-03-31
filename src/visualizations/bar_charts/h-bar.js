@@ -104,6 +104,11 @@ looker.plugins.visualizations.add({
                 box-shadow: 3px 3px 4px 0px #46464666;
                 border-radius: 3px;
                 font: 10px/12px 'Roboto Mono', monospace;
+                transition-duration: 500;
+            }
+
+            .tooltip-dimension-value {
+                font-weight: 700
             }
         </style>`
 
@@ -174,7 +179,7 @@ looker.plugins.visualizations.add({
             .attr("font-size", "9.47368px");
         // Add Y axis
         var y = d3.scaleLinear()
-            .domain([0, d3.max(data.map(function(d) { return d[measureName].value}))])
+            .domain([0, d3.max(data.map(function(d) { return d[measureName].value }))])
             .range([height, 0])
 
         let axisLeft = d3.axisLeft(y)
@@ -218,7 +223,8 @@ looker.plugins.visualizations.add({
 
                 console.log(d3.event.pageY + 10 + " : " + height)
 
-                dimensionTooltip.html(`<span class="tooltip-dimension-label">${dimensionLabel}</span>`)
+                dimensionTooltip.html(`<span class="tooltip-dimension-label">${dimensionLabel}: </span><span class="tooltip-dimension-value">${d[dimensionName].value}</span>`)
+                measureTooltip.html(`<span class="tooltip-dimension-label">${measureLabel}: </span><span class="tooltip-dimension-value">${numberWithCommas(d[measureName].value)}</span>`)
 
                 div.style("left", ((d3.event.pageX + 10) > width - 35 ? width : d3.event.pageX + 10) + "px")
                     .style("top", ((d3.event.pageY) > height ? height : d3.event.pageY) + "px");
