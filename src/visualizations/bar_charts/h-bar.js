@@ -95,8 +95,8 @@ looker.plugins.visualizations.add({
 
             .tooltip {
                 position: absolute;
-                text-align: center;
-                padding: 15px;
+                text-align: left;
+                padding: 12px;
                 background: #FFFFFF;
                 color: #313639;
                 pointer-events: none;
@@ -104,7 +104,7 @@ looker.plugins.visualizations.add({
                 box-shadow: 3px 3px 4px 0px #46464666;
                 border-radius: 3px;
                 font: 10px/12px 'Roboto Mono', monospace;
-                transition-duration: 500;
+                transition-duration: 250ms;
             }
 
             .tooltip-dimension-value {
