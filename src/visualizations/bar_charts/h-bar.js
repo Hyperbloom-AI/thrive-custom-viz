@@ -48,7 +48,7 @@ looker.plugins.visualizations.add({
               margin: 0
             }
 
-            .tooltip-donut {
+            .tooltip {
                 position: absolute;
                 text-align: center;
                 padding: .5rem;
@@ -93,7 +93,7 @@ looker.plugins.visualizations.add({
               margin: 0
             }
 
-            .tooltip-donut {
+            .tooltip {
                 position: absolute;
                 text-align: center;
                 padding: 15px;
@@ -102,7 +102,8 @@ looker.plugins.visualizations.add({
                 pointer-events: none;
                 font-size: 1.3rem;
                 box-shadow: 3px 3px 4px 0px #46464666;
-                border-radius: 3px
+                border-radius: 3px;
+                font: 10px/12px 'Roboto Mono', monospace;
             }
         </style>`
 
@@ -115,13 +116,15 @@ looker.plugins.visualizations.add({
             return;
         }
 
+        console.log(queryResponse)
+
         var dimension = queryResponse.fields.dimensions[0]
         var measure = queryResponse.fields.measures[0]
 
         var dimensionName = dimension.name
-        var dimensionLabel = dimension.label
+        var dimensionLabel = dimension.label_short
         var measureName = measure.name
-        var measureLabel = measure.label
+        var measureLabel = measure.label_short
 
         var margin = { top: 30, right: 60, bottom: 70, left: 80 },
             width = parentDiv.clientWidth - margin.left - margin.right,
@@ -142,8 +145,16 @@ looker.plugins.visualizations.add({
             .text("@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');");
 
         var div = d3.select("div").append("div")
-            .attr("class", "tooltip-donut")
-            .style("display", "none")
+            .attr("class", "tooltip")
+            .style("display", "none");
+        
+        var dimensionTooltip = d3.select(".tooltip")
+            .append('div')
+            .attr('class', 'tooltip-dimension')
+
+        var measureTooltip = d3.select(".tooltip")
+            .append('div')
+            .attr('class', 'tooltip-measure')
 
 
         var x = d3.scaleBand()
@@ -205,13 +216,12 @@ looker.plugins.visualizations.add({
                     .duration(50)
                     .style("display", "block");
 
-                console.log(d3.event.pageX + 10 + " : " + width)
-                console.log(d3.event.pageX + 10 > width)
-                console.log(d3.event.pageX + 10 > width ? d3.event.pageX + 10 : width)
+                console.log(d3.event.pageY + 10 + " : " + height)
 
-                div.html(d[dimensionName].value)
-                    .style("left", ((d3.event.pageX + 10) > width - 25 ? width : d3.event.pageX + 10) + "px")
-                    .style("top", (d3.event.pageY) + "px");
+                dimensionTooltip.html(`<span class="tooltip-dimension-label">${dimensionLabel}</span>`)
+
+                div.style("left", ((d3.event.pageX + 10) > width - 35 ? width : d3.event.pageX + 10) + "px")
+                    .style("top", ((d3.event.pageY) > height ? height : d3.event.pageY) + "px");
             })
             .on('mouseout', function (d, i) {
                 d3.select(this).transition()
