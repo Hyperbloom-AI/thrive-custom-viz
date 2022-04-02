@@ -66,6 +66,10 @@ looker.plugins.visualizations.add({
             .tooltip-dimension-value, .tooltip-measure-value {
                 font-weight: 700
             }
+
+            @media only screen and (max-width: 600px) {
+
+            }
         </style>`;
         // Create a container element to let us center the text.
     },
@@ -117,6 +121,24 @@ looker.plugins.visualizations.add({
             .tooltip-dimension-value, .tooltip-measure-value {
                 font-weight: 700
             }
+
+            .left-labels {
+                font-size: 9.5px;
+            }
+
+            .label {
+                color: #727171;
+                font: 9.47px/9px 'Roboto Mono', monospace;
+                letter-spacing: 0.04em;
+                font-weight: 700
+            }
+
+            @media only screen and (max-width: 545px) {
+                .left-labels {
+                    font-size: 7px;
+                    letter-spacing: -0.05em;
+                }
+            }
         </style>`;
         // Clear any errors from previous updates
         this.clearErrors(queryResponse.fields);
@@ -134,7 +156,7 @@ looker.plugins.visualizations.add({
         var measureName = measure.name
         var measureLabel = measure.label_short
 
-        var margin = { top: 0, right: 60, bottom: 35, left: parentDiv.clientWidth * 0.5  },
+        var margin = { top: 0, right: 60, bottom: 70, left: parentDiv.clientWidth * 0.5  },
             width = parentDiv.clientWidth - margin.left - margin.right,
             height = parentDiv.clientHeight - margin.top - margin.bottom;
 
@@ -145,6 +167,14 @@ looker.plugins.visualizations.add({
             .attr("height", height + margin.top + margin.bottom)
             .append("g")
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        svg.append("text")
+            .attr("class", "x label")
+            .attr("text-anchor", "middle")
+            .attr("x", width*0.5)
+            .attr("y", parentDiv.clientHeight - 28)
+            .text(dimensionLabel)
+            .attr("fill","#727171");
 
         svg.append('defs')
             .append('style')
@@ -197,7 +227,7 @@ looker.plugins.visualizations.add({
                 .style("font-family", "Roboto Mono")
                 .style("font-weight", "700")
                 .attr("fill", "#151313")
-                .attr("font-size", "9.5px");
+                .attr("class", "left-labels");
 
             svg.selectAll(".tick")
                 .selectAll("line")

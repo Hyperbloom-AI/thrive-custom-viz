@@ -116,6 +116,13 @@ looker.plugins.visualizations.add({
             .tooltip-dimension-value, .tooltip-measure-value {
                 font-weight: 700
             }
+
+            .label {
+                color: #727171;
+                font: 9.47px/9px 'Roboto Mono', monospace;
+                letter-spacing: 0.04em;
+                font-weight: 700
+            }
         </style>`
 
         
@@ -137,7 +144,7 @@ looker.plugins.visualizations.add({
         var measureName = measure.name
         var measureLabel = measure.label_short
 
-        var margin = { top: 30, right: 60, bottom: 70, left: 80 },
+        var margin = { top: 30, right: 20, bottom: 100, left: 100 },
             width = parentDiv.clientWidth - margin.left - margin.right,
             height = parentDiv.clientHeight - margin.top - margin.bottom;
 
@@ -149,6 +156,23 @@ looker.plugins.visualizations.add({
             .append("g")
             .attr("transform",
                 "translate(" + margin.left + "," + margin.top + ")");
+
+        svg.append("text")
+            .attr("class", "x label")
+            .attr("text-anchor", "middle")
+            .attr("x", width*0.5)
+            .attr("y", parentDiv.clientHeight - 48)
+            .text(dimensionLabel)
+            .attr("fill","#727171");
+
+        svg.append("text")
+            .attr("class", "y label")
+            .attr("text-anchor", "middle")
+            .attr("y", parentDiv.clientHeight*0.5)
+            .attr("x", 48)
+            .text(measureLabel)
+            .attr("fill","#727171")
+            .attr("transform", `translate(-307, ${parentDiv.clientHeight*0.5})rotate(-90)`);
 
         svg.append('defs')
             .append('style')
