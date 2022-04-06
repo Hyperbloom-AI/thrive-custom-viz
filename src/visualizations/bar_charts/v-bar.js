@@ -163,8 +163,8 @@ looker.plugins.visualizations.add({
         // append the svg object to the body of the page
         var svg = d3.select("div")
             .append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
+            .attr("width", width + margin.left + margin.right - 15)
+            .attr("height", height + margin.top + margin.bottom - 15)
             .append("g")
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 

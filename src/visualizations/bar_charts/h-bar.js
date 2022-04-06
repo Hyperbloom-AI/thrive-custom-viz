@@ -144,15 +144,15 @@ looker.plugins.visualizations.add({
         var measureName = measure.name
         var measureLabel = measure.label_short
 
-        var margin = { top: 30, right: 20, bottom: 100, left: 100 },
+        var margin = { top: 30, right: 40, bottom: 100, left: 120 },
             width = parentDiv.clientWidth - margin.left - margin.right,
             height = parentDiv.clientHeight - margin.top - margin.bottom;
 
         // append the svg object to the body of the page
         var svg = d3.select("div")
             .append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
+            .attr("width", parentDiv.clientWidth - 15)
+            .attr("height", parentDiv.clientHeight - 15)
             .append("g")
             .attr("transform",
                 "translate(" + margin.left + "," + margin.top + ")");
