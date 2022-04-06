@@ -144,7 +144,7 @@ looker.plugins.visualizations.add({
 
   
       // Insert the data into the page
-      this._blockElement1ValueWrapper.innerHTML = `<h3>${numberWithCommas(Math.round(data[0]["dim_zi_intent_metrics.companies_with_intent"].value))}</h3>`
+      this._blockElement1ValueWrapper.innerHTML = `<h3>${numberWithCommas(Math.round(data[0]["dim_zi_company_entities.count"].value))}</h3>`
       this._blockElement2ValueWrapper.innerHTML = `<h3>${numberWithCommas(Math.round(data[0]["dim_zi_company_entities.average_zi_c_company_employees"].value))}</h3>`
       
       this._blockElement1SubtitleWrapper.innerHTML = `<h5>Total Locations: ${numberWithCommas(Math.round(data[0]["dim_zi_company_entities.total_zi_c_num_locations"].value))}</h5>`
