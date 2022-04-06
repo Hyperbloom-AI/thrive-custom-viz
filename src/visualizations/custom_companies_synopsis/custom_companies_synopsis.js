@@ -141,8 +141,7 @@ looker.plugins.visualizations.add({
       // Grab the first cell of the data
       var firstRow = data[0];
       var firstCell = firstRow[queryResponse.fields.measures[0].name];
-
-  
+      
       // Insert the data into the page
       this._blockElement1ValueWrapper.innerHTML = `<h3>${numberWithCommas(Math.round(data[0]["dim_zi_company_entities.count"].value))}</h3>`
       this._blockElement2ValueWrapper.innerHTML = `<h3>${numberWithCommas(Math.round(data[0]["dim_zi_company_entities.average_zi_c_company_employees"].value))}</h3>`

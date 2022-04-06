@@ -141,6 +141,8 @@ looker.plugins.visualizations.add({
       // Clear any errors from previous updates
       this.clearErrors(queryResponse.fields);
 
+      console.log(queryResponse)
+
       // Throw some errors and exit if the shape of the data isn't what this chart needs
       if (queryResponse.fields.measures.length == 0) {
         this.addError({title: "No Measures", message: "This chart requires measures."});
