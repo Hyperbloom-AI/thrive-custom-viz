@@ -85,13 +85,10 @@ looker.plugins.visualizations.add({
         d3.select("div").html("");
         document.getElementById("vis").innerHTML = ""
 
-        const threshold = 65 // Limit for long strings
+        const threshold = 45 // Limit for long strings
 
         element.innerHTML = `
         <style>
-
-            @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
-            @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');
 
             * {
               box-sizing: border-box;
@@ -167,7 +164,7 @@ looker.plugins.visualizations.add({
         var measureName = measure.name
         var measureLabel = measure.label_short
 
-        var margin = { top: 0, right: 60, bottom: 70, left: parentDiv.clientWidth * 0.5  },
+        var margin = { top: 0, right: 60, bottom: 70, left: parentDiv.clientWidth * 0.3  },
             width = parentDiv.clientWidth - margin.left - margin.right,
             height = parentDiv.clientHeight - margin.top - margin.bottom;
 
