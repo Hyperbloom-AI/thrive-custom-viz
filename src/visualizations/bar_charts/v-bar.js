@@ -164,7 +164,7 @@ looker.plugins.visualizations.add({
         var measureName = measure.name
         var measureLabel = measure.label_short
 
-        var margin = { top: 0, right: 60, bottom: 70, left: parentDiv.clientWidth * 0.3  },
+        var margin = { top: 0, right: 60, bottom: 70, left: parentDiv.clientWidth * 0.4  },
             width = parentDiv.clientWidth - margin.left - margin.right,
             height = parentDiv.clientHeight - margin.top - margin.bottom;
 
