@@ -139,6 +139,11 @@ looker.plugins.visualizations.add({
                 font-weight: 700
             }
 
+            .axis-grid line {
+                stroke: #c3c3c3;
+                stroke-dasharray: 2;
+            }
+
             @media only screen and (max-width: 545px) {
                 .left-labels {
                     font-size: 7px;
@@ -212,8 +217,9 @@ looker.plugins.visualizations.add({
                 .range([0, width])
 
             // X Axis G element
-            let axisBottom = d3.axisBottom(x)
-            axisBottom.ticks(3)
+            let axisBottom = d3.axisBottom(x).ticks(3)
+
+            const axisBottomGrid = d3.axisBottom(x).tickSize(-height).tickFormat('').ticks(3)
 
             svg.append("g")
                 .attr("transform", "translate(0," + height + ")")
@@ -234,6 +240,12 @@ looker.plugins.visualizations.add({
                 .style("font-weight", "700")
                 .attr("fill", "#151313")
                 .attr("class", "left-labels");
+
+            svg.append('g')
+                .attr('class', 'x axis-grid')
+                .attr('transform', 'translate(0,' + height + ')')
+                .call(axisBottomGrid);
+              
 
             svg.selectAll(".tick")
                 .selectAll("line")

@@ -148,6 +148,11 @@ looker.plugins.visualizations.add({
                 font-weight: 700;
             }
 
+            .axis-grid line {
+                stroke: #c3c3c3;
+                stroke-dasharray: 2;
+            }
+
             .right-wrapper {
                 width: 100%;
                 max-width: 100%;
@@ -259,8 +264,9 @@ looker.plugins.visualizations.add({
             .domain([0, d3.max(data.map(function(d) { return d[measureName].value }))])
             .range([height, 0])
 
-        let axisLeft = d3.axisLeft(y)
-        axisLeft.ticks(3)
+        let axisLeft = d3.axisLeft(y).ticks(3)
+
+        const axisLeftGrid = d3.axisLeft(y).tickSize(-width).tickFormat('').ticks(3)
 
         svg.append("g")
             .call(axisLeft)
@@ -269,6 +275,10 @@ looker.plugins.visualizations.add({
             .style("font-weight", "700")
             .attr("fill", "#151313")
             .attr("font-size", "11px");
+
+        svg.append('g')
+            .attr('class', 'y axis-grid')
+            .call(axisLeftGrid);
 
 
         svg.selectAll(".tick")
