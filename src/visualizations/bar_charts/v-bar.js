@@ -7,6 +7,10 @@ function numberWithCommas(x) {
     return parts.join(".");
 }
 
+function abbreviateLongString(x, threshold) {
+    return x.length < threshold ? x : x.substring(0, threshold) + "..."
+}
+
 looker.plugins.visualizations.add({
     id: "hello_world",
     label: "Hello World",
@@ -59,7 +63,7 @@ looker.plugins.visualizations.add({
                 font-size: 1.3rem;
                 box-shadow: 3px 3px 4px 0px #46464666;
                 border-radius: 3px;
-                font: 10px/12px 'Roboto Mono', monospace;
+                font: 10px/12px Helvetica;
                 transition-duration: 250ms;
             }
 
@@ -80,6 +84,8 @@ looker.plugins.visualizations.add({
 
         d3.select("div").html("");
         document.getElementById("vis").innerHTML = ""
+
+        const threshold = 65 // Limit for long strings
 
         element.innerHTML = `
         <style>
@@ -114,7 +120,7 @@ looker.plugins.visualizations.add({
                 font-size: 1.3rem;
                 box-shadow: 3px 3px 4px 0px #46464666;
                 border-radius: 3px;
-                font: 10px/12px 'Roboto Mono', monospace;
+                font: 10px/12px Helvetica;
                 transition-duration: 250ms;
             }
 
@@ -128,7 +134,7 @@ looker.plugins.visualizations.add({
 
             .label {
                 color: #727171;
-                font: 9.47px/9px 'Roboto Mono', monospace;
+                font: 9.47px/9px Helvetica;
                 letter-spacing: 0.04em;
                 font-weight: 700
             }
@@ -198,7 +204,7 @@ looker.plugins.visualizations.add({
 
             var y = d3.scaleBand()
                 .range([0, height])
-                .domain(data.map(function (d) { return d[dimensionName].value }))
+                .domain(data.map(function (d) { return abbreviateLongString(d[dimensionName].value, threshold) }))
                 .padding(0.2);
 
             var x = d3.scaleLinear()
@@ -214,7 +220,7 @@ looker.plugins.visualizations.add({
                 .call(axisBottom)
                 .selectAll("text")
                 .style("text-anchor", "middle")
-                .style("font-family", "Roboto Mono")
+                .style("font-family", 'Helvetica')
                 .style("font-weight", "700")
                 .attr("fill", "#151313")
                 .attr("font-size", "9.5px");
@@ -224,7 +230,7 @@ looker.plugins.visualizations.add({
                 .call(d3.axisLeft(y))
                 .selectAll("text")
                 .style("text-anchor", "end")
-                .style("font-family", "Roboto Mono")
+                .style("font-family", 'Helvetica')
                 .style("font-weight", "700")
                 .attr("fill", "#151313")
                 .attr("class", "left-labels");
@@ -241,7 +247,7 @@ looker.plugins.visualizations.add({
                 .data(data)
                 .enter()
                 .append("rect")
-                .attr("y", function (d) { return y(d[dimensionName].value); })
+                .attr("y", function (d) { return y(abbreviateLongString(d[dimensionName].value, threshold)); })
                 .attr("x", function (d) { return x(0); })
                 .attr("height", y.bandwidth())
                 .attr("width", function (d) { return x(d[measureName].value); })

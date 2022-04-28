@@ -96,7 +96,8 @@ looker.plugins.visualizations.add({
             #vis {
               height: 100%;
               width: 100%;
-              margin: 0
+              margin: 0;
+              display: flex
             }
 
             .tooltip {
@@ -109,7 +110,7 @@ looker.plugins.visualizations.add({
                 font-size: 1.3rem;
                 box-shadow: 3px 3px 4px 0px #46464666;
                 border-radius: 3px;
-                font: 10px/12px 'Roboto Mono', monospace;
+                font: 10px/12px Helvetica;
                 transition-duration: 250ms;
             }
 
@@ -119,9 +120,37 @@ looker.plugins.visualizations.add({
 
             .label {
                 color: #727171;
-                font: 9.47px/9px 'Roboto Mono', monospace;
+                font: 9.47px/9px Helvetica;
                 letter-spacing: 0.04em;
                 font-weight: 700
+            }
+
+            .y-axis-div {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-bottom: 25px;
+                padding-left: 15px;
+            }
+
+            .y-axis-text {
+                will-change: transform;
+                transform: rotate(270deg);
+                ms-writing-mode: tb-rl;
+                -webkit-writing-mode: vertical-rl;
+                writing-mode: vertical-rl;
+                -webkit-transform: rotate(180deg);
+                transform: rotate(180deg);
+                white-space: nowrap;
+                color: #727171;
+                font: 9.47px/9px Helvetica;
+                letter-spacing: 0.04em;
+                font-weight: 700;
+            }
+
+            .right-wrapper {
+                width: 100%;
+                max-width: 100%;
             }
         </style>`
 
@@ -144,14 +173,32 @@ looker.plugins.visualizations.add({
         var measureName = measure.name
         var measureLabel = measure.label_short
 
-        var margin = { top: 30, right: 40, bottom: 100, left: 120 },
-            width = parentDiv.clientWidth - margin.left - margin.right,
-            height = parentDiv.clientHeight - margin.top - margin.bottom;
+        var outerDiv = d3.select('div')
+
+        var yDiv = outerDiv.append('div')
+            .attr('class', 'y-axis-div')
+            .append('span')
+            .attr('class', 'y-axis-text')
+            .text(measureLabel)
+            .attr('id', 'yLabel');
+
+        var leftDiv = document.getElementById("yLabel");
+
+        var rightWrapper = outerDiv.append('div')
+            .attr('class', 'right-wrapper')
+
+        var xDiv = rightWrapper.append('div')
+            .attr('class', 'x-axis-div')
+
+        console.log(leftDiv.clientWidth)
+
+        const margin = {top: 30, right: 30, bottom: 90, left: 95}
+        const width = parentDiv.clientWidth - leftDiv.clientWidth - margin.left - margin.right
+        const height =  parentDiv.clientHeight - leftDiv.clientWidth - margin.top - margin.bottom
 
         // append the svg object to the body of the page
-        var svg = d3.select("div")
-            .append("svg")
-            .attr("width", parentDiv.clientWidth - 15)
+        var svg = rightWrapper.append("svg")
+            .attr("width", parentDiv.clientWidth - leftDiv.clientWidth - 15)
             .attr("height", parentDiv.clientHeight - 15)
             .append("g")
             .attr("transform",
@@ -165,14 +212,14 @@ looker.plugins.visualizations.add({
             .text(dimensionLabel)
             .attr("fill","#727171");
 
-        svg.append("text")
+        /*svg.append("text")
             .attr("class", "y label")
             .attr("text-anchor", "middle")
             .attr("y", parentDiv.clientHeight*0.5)
             .attr("x", 48)
             .text(measureLabel)
             .attr("fill","#727171")
-            .attr("transform", `translate(-307, ${parentDiv.clientHeight*0.5})rotate(-90)`);
+            .attr("transform", `translate(-307, ${parentDiv.clientHeight*0.5})rotate(-90)`);*/
 
         svg.append('defs')
             .append('style')
@@ -203,7 +250,7 @@ looker.plugins.visualizations.add({
             .selectAll("text")
             .attr("transform", "translate(-5,5)rotate(-45)")
             .style("text-anchor", "end")
-            .style("font-family", "Roboto Mono")
+            .style("font-family", "Helvetica")
             .style("font-weight", "700")
             .attr("fill", "#151313")
             .attr("font-size", "9.47368px");
@@ -218,7 +265,7 @@ looker.plugins.visualizations.add({
         svg.append("g")
             .call(axisLeft)
             .selectAll("text")
-            .style("font-family", "Roboto Mono")
+            .style("font-family", "Helvetica")
             .style("font-weight", "700")
             .attr("fill", "#151313")
             .attr("font-size", "11px");
