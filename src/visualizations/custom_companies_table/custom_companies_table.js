@@ -99,9 +99,6 @@ looker.plugins.visualizations.add({
         element.innerHTML = `
         <style>
 
-            @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
-            @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');
-
             * {
               box-sizing: border-box;
             }
@@ -131,29 +128,29 @@ looker.plugins.visualizations.add({
             }
 
             .thrive-table thead tr th {
-                font: 12px/16px 'Roboto', sans-serif;
+                font: 12px/16px Helvetica;
                 color: #727171;
                 text-align:left
             }
             .company-name {
-                font: 14px/16px 'Roboto', sans-serif;
+                font: 14px/16px Helvetica;
                 font-weight: 700;
                 margin: 0;
                 margin-bottom: 11px
             }
             .locale-number__wrapper {
-                font: 10px/9px 'Roboto Mono', monospace;
+                font: 10px/9px Helvetica;
                 font-weight: 700;
                 margin-top: auto;
                 display: flex;
                 justify-content: space-between;
             }
             .company-topic {
-                font: 14px/16px 'Roboto', sans-serif;
+                font: 14px/16px Helvetica;
             }
 
             .company-more-topics {
-                font: 10px/9px 'Roboto Mono', monospace;
+                font: 10px/9px Helvetica;
                 color: #A1A1A1;
                 font-weight: 700;
                 margin-top: auto;
@@ -217,7 +214,7 @@ looker.plugins.visualizations.add({
             }
 
             .company-location-count, .revenue-range, .employee-range, .business-type {
-                font: 14px/16px 'Roboto', sans-serif;
+                font: 14px/16px Helvetica;
             }
 
             table {
@@ -231,12 +228,12 @@ looker.plugins.visualizations.add({
             }
 
             .chart-title {
-                font: 20px/25px 'Roboto', sans-serif;
+                font: 20px/25px Helvetica;
             }
 
             .chart-function-button {
                 color: #fff;
-                font: 14px/20px 'Roboto Mono', monospace;
+                font: 14px/20px Helvetica;
                 padding: 10px 20px;
                 border: none;
                 background-color: #BC3733;

@@ -25,10 +25,6 @@ looker.plugins.visualizations.add({
       // Insert a <style> tag with some styles we'll use later.
       element.innerHTML = `
         <style>
-
-            @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
-            @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');
-
             * {
               box-sizing: border-box;
             }
@@ -53,7 +49,7 @@ looker.plugins.visualizations.add({
                 flex-flow: row nowrap;
                 justify-content: space-around;
                 align-items: center;
-                font: 47px/59px 'Roboto', sans-serif;
+                font: 47px/59px Helvetica;
                 padding: 20px;
             }
             .hello-world-vis > div {
@@ -71,19 +67,19 @@ looker.plugins.visualizations.add({
                 margin-bottom: 10px
             }
             .inner-block__title h2 {
-                font: 16px/20px 'Roboto', sans-serif;
+                font: 16px/20px Helvetica;
                 font-weight: 400 !important;
                 margin: 0;
             }
 
             .inner-block__value h3 {
-                font: 47px/59px 'Roboto', sans-serif;
+                font: 47px/59px Helvetica;
                 font-weight: 400 !important;
                 margin: 0;
             }
 
             .inner-block__subtitle h5 {
-                font: 14px/20px 'Roboto Mono', monospace;
+                font: 14px/20px Helvetica;
                 font-weight: 400 !important;
                 margin: 0;
                 color: #898889;
