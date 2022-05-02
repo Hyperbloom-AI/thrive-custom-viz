@@ -271,8 +271,6 @@ looker.plugins.visualizations.add({
                         .duration(50)
                         .style("display", "block");
     
-                    console.log(d3.event.pageY + 10 + " : " + height)
-    
                     dimensionTooltip.html(`<span class="tooltip-dimension-label">${dimensionLabel}: </span><span class="tooltip-dimension-value">${d[dimensionName].value}</span>`)
                     measureTooltip.html(`<span class="tooltip-dimension-label">${measureLabel}: </span><span class="tooltip-dimension-value">${numberWithCommas(d[measureName].value)}</span>`)
     
