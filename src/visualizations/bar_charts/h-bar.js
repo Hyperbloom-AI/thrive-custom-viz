@@ -168,8 +168,6 @@ looker.plugins.visualizations.add({
             return;
         }
 
-        console.log(queryResponse)
-
         var dimension = queryResponse.fields.dimensions[0]
         var measure = queryResponse.fields.measures[0]
 
@@ -194,8 +192,6 @@ looker.plugins.visualizations.add({
 
         var xDiv = rightWrapper.append('div')
             .attr('class', 'x-axis-div')
-
-        console.log(leftDiv.clientWidth)
 
         const margin = {top: 30, right: 30, bottom: 90, left: 95}
         const width = parentDiv.clientWidth - leftDiv.clientWidth - margin.left - margin.right
@@ -307,8 +303,6 @@ looker.plugins.visualizations.add({
                 div.transition()
                     .duration(50)
                     .style("display", "block");
-
-                console.log(d3.event.pageY + 10 + " : " + height)
 
                 dimensionTooltip.html(`<span class="tooltip-dimension-label">${dimensionLabel}: </span><span class="tooltip-dimension-value">${d[dimensionName].value}</span>`)
                 measureTooltip.html(`<span class="tooltip-dimension-label">${measureLabel}: </span><span class="tooltip-dimension-value">${numberWithCommas(d[measureName].value)}</span>`)
