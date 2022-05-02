@@ -8,7 +8,11 @@ function numberWithCommas(x) {
 }
 
 function abbreviateLongString(x, threshold) {
-    return x.length < threshold ? x : x.substring(0, threshold) + "..."
+    try {
+        return x.length < threshold ? x : x.substring(0, threshold) + "..."
+    } catch {
+        return "Error in this field"
+    }
 }
 
 looker.plugins.visualizations.add({
@@ -151,7 +155,12 @@ looker.plugins.visualizations.add({
         // Clear any errors from previous updates
         this.clearErrors(queryResponse.fields);
 
-        if (queryResponse.fields.measures.length == 0 || queryResponse.fields.dimensions.length == 0) {
+        try {
+            if (queryResponse.fields.measures.length == 0 || queryResponse.fields.dimensions.length == 0) {
+                this.addError({ title: "No Measures or Dimensions", message: "This chart requires a measure and a dimension." });
+                return;
+            }
+        } catch {
             this.addError({ title: "No Measures or Dimensions", message: "This chart requires a measure and a dimension." });
             return;
         }
@@ -286,12 +295,6 @@ looker.plugins.visualizations.add({
                         .delay(250)
                         .style('display', "none");
                 })
-
-        // Throw some errors and exit if the shape of the data isn't what this chart needs
-        if (queryResponse.fields.measures.length == 0) {
-            this.addError({ title: "No Measures", message: "This chart requires measures." });
-            return;
-        }
 
         done()
     }
