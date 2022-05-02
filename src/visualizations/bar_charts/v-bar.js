@@ -8,10 +8,10 @@ function numberWithCommas(x) {
 }
 
 function abbreviateLongString(x, threshold) {
-    try {
+    if(x) {
         return x.length < threshold ? x : x.substring(0, threshold) + "..."
-    } catch {
-        return "Error in this field"
+    } else {
+        return "None"
     }
 }
 
