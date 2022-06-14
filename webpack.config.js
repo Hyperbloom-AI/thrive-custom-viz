@@ -14,6 +14,7 @@ var webpackConfig = {
     firebolt_intent_synopsis: './src/visualizations/custom_intent_synopsis/custom_intent_synopsis_firebolt.js',
     horizontal_bar: './src/visualizations/bar_charts/h-bar.js',
     vertical_bar: './src/visualizations/bar_charts/v-bar.js',
+    custom_pbg_table: './src/visualizations/custom_pbg_table/custom-pbg-table.js',
   },
   output: {
     filename: "[name].js",
