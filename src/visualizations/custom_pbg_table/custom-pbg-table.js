@@ -85,7 +85,7 @@ looker.plugins.visualizations.add({
             }
 
             .thrive-table thead tr th {
-                font: 12px/16px Helvetica;
+                font: 16px/20px Helvetica;
                 color: #fff;
                 text-align:left;
                 background-color: #595958;
@@ -95,13 +95,7 @@ looker.plugins.visualizations.add({
             }
 
             .thrive-table thead tr th:not(:first-child) {
-                font: 16px/20px Helvetica;
-                color: #fff;
-                text-align:left;
-                background-color: #595958;
-                padding: 8px;
                 text-align: center; 
-                vertical-align: middle;
                 border-left: 2px solid #fff
             }
 
