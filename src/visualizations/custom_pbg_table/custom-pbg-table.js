@@ -95,7 +95,7 @@ looker.plugins.visualizations.add({
             }
 
             .thrive-table thead tr th:not(:first-child) {
-                font: 12px/16px Helvetica;
+                font: 16px/20px Helvetica;
                 color: #fff;
                 text-align:left;
                 background-color: #595958;
@@ -105,42 +105,13 @@ looker.plugins.visualizations.add({
                 border-left: 2px solid #fff
             }
 
-            .company-name {
-                font: 14px/16px Helvetica;
-                font-weight: 700;
-                margin: 0;
-                margin-bottom: 11px
-            }
-            .locale-number__wrapper {
-                font: 10px/9px Helvetica;
-                font-weight: 700;
-                margin-top: auto;
-                display: flex;
-                justify-content: space-between;
-            }
-            .company-topic {
-                font: 14px/16px Helvetica;
-            }
-
-            .company-more-topics {
-                font: 10px/9px Helvetica;
-                color: #A1A1A1;
-                font-weight: 700;
-                margin-top: auto;
-            }
-
-            .topics-wrapper {
-                display: flex;
-                flex-flow: column;
-            }
-
-
             td {
                 height: inherit;
                 border-left: none;
                 border-right: none;
                 border-top: none;
-                padding: 5px
+                padding: 5px;
+                font: 16px/20px Helvetica;
             }
 
             tbody tr {
