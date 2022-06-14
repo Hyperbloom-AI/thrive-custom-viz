@@ -85,10 +85,10 @@ looker.plugins.visualizations.add({
             }
 
             .thrive-table thead tr th {
-                font: 16px/20px Helvetica;
+                font: 13px/16px Helvetica;
                 color: #fff;
                 text-align:left;
-                background-color: #595958;
+                background-color: #7F7574;
                 padding: 8px;
                 text-align: left; 
                 vertical-align: middle;
@@ -105,7 +105,7 @@ looker.plugins.visualizations.add({
                 border-right: none;
                 border-top: none;
                 padding: 5px;
-                font: 16px/20px Helvetica;
+                font: 13px/16px Helvetica;
             }
 
             tbody tr {
@@ -144,40 +144,15 @@ looker.plugins.visualizations.add({
             }
 
             tbody tr {
-                background-color: #eeeeee
+                background-color: #E6E6E6;
             }
 
             tbody tr:nth-child(even) {
                 background-color: #ffffff;
             }
 
-            .company-intent, .revenue-range, .employee-range, .business-type {
-                font: 14px/16px Helvetica;
-            }
-
             table {
                 padding-left: 22px
-            }
-
-            .table-function__wrapper {
-                display: flex;
-                flex-flow: row;
-                justify-content: space-between;
-                align-items: center;
-            }
-
-            .chart-title {
-                font: 20px/25px Helvetica;
-            }
-
-            .chart-function-button {
-                color: #fff;
-                font: 14px/20px Helvetica;
-                padding: 10px 20px;
-                border: none;
-                background-color: #BC3733;
-                height: fit-content;
-                cursor: pointer
             }
 
             .subtotal-row {
