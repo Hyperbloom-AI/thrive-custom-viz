@@ -15,6 +15,7 @@ var webpackConfig = {
     horizontal_bar: './src/visualizations/bar_charts/h-bar.js',
     vertical_bar: './src/visualizations/bar_charts/v-bar.js',
     custom_pbg_table: './src/visualizations/custom_pbg_table/custom-pbg-table.js',
+    map_test: './src/visualizations/maps/map_test.js',
   },
   output: {
     filename: "[name].js",
