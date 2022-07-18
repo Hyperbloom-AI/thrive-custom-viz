@@ -26,7 +26,10 @@ The visualizations provided in this repository are intended to serve as examples
 * `yarn lint` - Runs TSLint across the codebase.
 * `yarn lint-fix` - Runs TSLint and attempts to fix any linter errors automatically.
 
-
 ----
+
+### Known Bugs
+* Occasionally you'll get an error ending with `ERR_OSSL_EVP_UNSUPPORTED` to fix in powershell simply run `$env:NODE_OPTIONS="--openssl-legacy-provider"`
+
 
 
