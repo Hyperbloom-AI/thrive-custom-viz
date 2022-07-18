@@ -1,4 +1,3 @@
-import * as d3 from 'd3'
 import mapboxgl from 'mapbox-gl'
 
 function numberWithCommas(x) {
@@ -41,6 +40,8 @@ looker.plugins.visualizations.add({
               margin: 0;
               padding: 0;
               border: none;
+              display: flex;
+              flex-flow: column;
             }
 
             #vis {
@@ -50,32 +51,58 @@ looker.plugins.visualizations.add({
             }
 
             .map-paginator__wrapper {
-                margin-top: 20px;
+                margin-top: 10px;
                 margin-bottom: 10px;
             }
 
             .map-paginator {
                 color: #A1A1A1;
                 font-family: 'Roboto', serif;
-                font-size: 16px;
-                line-height: 20px;
+                font-size: 14px;
+                line-height: 18px;
                 padding: 10px 20px;
                 background-color: white;
-                border: none
+                border: none;
+                cursor: pointer;
+                transition-duration: 500ms
+            }
+
+            .map-paginator.active {
+                color: #000000;
+                font-weight: 700;
+                background-color: #EDEDED;
             }
             
         </style>`;
 
+        const changeActive = (e) => {
+
+            if(e.target.classList.contains("active")) {
+                return null
+            }
+
+            const els = document.getElementsByClassName("map-paginator")
+            for (let i = 0; i < els.length; i++) {
+                if(els[i].classList.contains("active")) {
+                    els[i].classList.remove("active")
+                    e.target.classList.add("active")
+                    return null
+                }
+            }
+        }
 
         this.__mapStatesButton = document.createElement('button')
         this.__mapStatesButton.innerHTML = "States"
-        this.__mapStatesButton.className = "map-paginator"
+        this.__mapStatesButton.className = "map-paginator active"
+
         this.__mapCBSAsButton = document.createElement('button')
         this.__mapCBSAsButton.innerHTML = "CBSAs"
         this.__mapCBSAsButton.className = "map-paginator"
+
         this.__mapZipCodesButton = document.createElement('button')
         this.__mapZipCodesButton.innerHTML = "Zip Codes"
         this.__mapZipCodesButton.className = "map-paginator"
+
         this.__mapBEsButton = document.createElement('button')
         this.__mapBEsButton.innerHTML = "Business Entities"
         this.__mapBEsButton.className = "map-paginator"
@@ -88,10 +115,15 @@ looker.plugins.visualizations.add({
         this.__mapPaginatorWrapper.appendChild(this.__mapZipCodesButton)
         this.__mapPaginatorWrapper.appendChild(this.__mapBEsButton)
 
+        this.__mapStatesButton.addEventListener("click", changeActive)
+        this.__mapCBSAsButton.addEventListener("click", changeActive)
+        this.__mapZipCodesButton.addEventListener("click", changeActive)
+        this.__mapBEsButton.addEventListener("click", changeActive)
+
         element.appendChild(this.__mapPaginatorWrapper)
 
         this.__mapBox = document.createElement('div')
-        this.__mapBox.style.height = 'calc(100% - 70px)'
+        this.__mapBox.style.height = '100%'
         this.__mapBox.style.width = '100%'
         this.__mapBox.id = "map"
 

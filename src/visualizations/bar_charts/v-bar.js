@@ -15,6 +15,12 @@ function abbreviateLongString(x, threshold) {
     }
 }
 
+function constrainData(d, prop, threshold) {
+    var r = d.filter(dp => dp[prop].value)
+    console.log(r.slice(0, threshold))
+    return r.slice(0, threshold)
+}
+
 looker.plugins.visualizations.add({
     id: "hello_world",
     label: "Hello World",
@@ -215,11 +221,11 @@ looker.plugins.visualizations.add({
 
             var y = d3.scaleBand()
                 .range([0, height])
-                .domain(data.map(function (d) { return abbreviateLongString(d[dimensionName].value, threshold) }))
+                .domain(constrainData(data, dimensionName, 50).map(function (d) { return abbreviateLongString(d[dimensionName].value, threshold) }))
                 .padding(0.2);
 
             var x = d3.scaleLinear()
-                .domain([0, d3.max(data.map(function(d) { return d[measureName].value }))])
+                .domain([0, d3.max(constrainData(data, dimensionName, 50).map(function(d) { return d[measureName].value }))])
                 .range([0, width])
 
             // X Axis G element
@@ -262,7 +268,7 @@ looker.plugins.visualizations.add({
 
             // Bars
             svg.selectAll("mybar")
-                .data(data)
+                .data(constrainData(data, dimensionName, 50))
                 .enter()
                 .append("rect")
                 .attr("y", function (d) { return y(abbreviateLongString(d[dimensionName].value, threshold)); })
