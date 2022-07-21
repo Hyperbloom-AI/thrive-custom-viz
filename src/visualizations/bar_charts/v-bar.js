@@ -17,7 +17,6 @@ function abbreviateLongString(x, threshold) {
 
 function constrainData(d, prop, threshold) {
     var r = d.filter(dp => dp[prop].value)
-    console.log(r.slice(0, threshold))
     return r.slice(0, threshold)
 }
 

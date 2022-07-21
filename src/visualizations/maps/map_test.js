@@ -1,4 +1,9 @@
 import mapboxgl from 'mapbox-gl'
+//var mapData = require('./somefile.json')
+import mapData from './mapbox-boundaries-adm1-v3_4.json';
+import regeneratorRuntime from "regenerator-runtime";
+import "core-js/stable";
+
 
 function numberWithCommas(x) {
     x = x.toFixed(0)
@@ -53,6 +58,7 @@ looker.plugins.visualizations.add({
             .map-paginator__wrapper {
                 margin-top: 10px;
                 margin-bottom: 10px;
+                padding: 0px 10px;
             }
 
             .map-paginator {
@@ -149,6 +155,102 @@ looker.plugins.visualizations.add({
             projection: 'globe'
         });
 
+        map.on('load', () => {
+            createViz();
+        });
+
+        function getMax(arr) {
+            const set = data.filter(row => arr.hasOwnProperty(row["dim_zi_company_entities.zi_c_hq_state"].value))
+            let max = set.reduce((max, item) => max["dim_zi_company_entities.count"].value > item["dim_zi_company_entities.count"].value ? max : item);
+            return max["dim_zi_company_entities.count"].value
+        }
+
+        function createViz() {
+            const lookupData = filterLookupTable();
+
+            function filterLookupTable(lookupTable) {
+                const lookupData = {};
+    
+                const searchData = mapData.adm1.data.all
+    
+                Object.keys(searchData).forEach(function(key) {
+                    const featureData = searchData[key]
+                    if(featureData.iso_3166_1 === 'US') {
+                        lookupData[featureData['name']] = featureData
+                    }
+                })
+                return lookupData;
+            }
+
+            map.addSource('statesData', {
+                type: 'vector',
+                url: 'mapbox://mapbox.boundaries-adm1-v3'
+            });
+
+            const maxValue = getMax(lookupData)
+
+            map.addLayer(
+                {
+                  id: 'states-join',
+                  type: 'fill',
+                  source: 'statesData',
+                  'source-layer': 'boundaries_admin_1',
+                  paint: {
+                    'fill-color': [
+                      'case',
+                      ['!=', ['feature-state', 'companies'], null],
+                      [
+                        'interpolate',
+                        ['linear'],
+                        ['feature-state', 'companies'],
+                        0,
+                        'rgba(255,237,234,0.6)',
+                        maxValue,
+                        'rgba(179,18,31,0.6)'
+                      ],
+                      'rgba(255, 255, 255, 0)'
+                    ]
+                  }
+                },
+                'waterway-label'
+              );
+
+            function setStates() {
+                for (let i = 0; i < data.length; i++) {
+                    const row = data[i]
+                    if(!lookupData.hasOwnProperty(row["dim_zi_company_entities.zi_c_hq_state"].value)) {
+                        continue;
+                    }
+                    map.setFeatureState(
+                        {
+                            source: "statesData",
+                            sourceLayer: 'boundaries_admin_1',
+                            id: lookupData[row["dim_zi_company_entities.zi_c_hq_state"].value].feature_id
+                        },
+                        {
+                            companies: row["dim_zi_company_entities.count"].value
+                        }
+                    )
+                }
+            }
+
+            // Check if `statesData` source is loaded.
+            function setAfterLoad(event) {
+                if (event.sourceID !== 'statesData' && !event.isSourceLoaded) return;
+                setStates();
+                map.off('sourcedata', setAfterLoad);
+            }
+    
+            // If `statesData` source is loaded, call `setStates()`.
+            if (map.isSourceLoaded('statesData')) {
+                setStates();
+            } else {
+                map.on('sourcedata', setAfterLoad);
+            }
+        }
+
+  
+
         map.on('style.load', () => {
             map.setFog({
                 color: 'rgb(186, 210, 235)', // Lower atmosphere
@@ -157,13 +259,6 @@ looker.plugins.visualizations.add({
                 'space-color': 'rgb(11, 11, 25)', // Background color
                 'star-intensity': 0.6 // Background star brightness (default 0.35 at low zoooms )
             }); // Set the default atmosphere style
-
-            map.addSource('statesData', {
-                type: 'vector',
-                url: 'mapbox://mapbox.boundaries-adm1-v3'
-            });
-
-            console.log('Map styling complete')
         });
 
         
@@ -175,7 +270,7 @@ looker.plugins.visualizations.add({
             return;
         }*/
 
-        console.log(data)
+        console.log(queryResponse)
 
         //var dimension = queryResponse.fields.dimensions[0]
         //var measure = queryResponse.fields.measures[0]
