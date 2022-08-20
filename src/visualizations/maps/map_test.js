@@ -183,6 +183,8 @@ looker.plugins.visualizations.add({
             projection: 'globe'
         });
 
+        let hoveredStateId = null; // Tracks hovered state and updates with popup
+
         map.addControl(new mapboxgl.NavigationControl());
 
         map.on('load', () => {
@@ -244,6 +246,48 @@ looker.plugins.visualizations.add({
                 },
                 'waterway-label'
             );
+
+            map.addLayer({
+                id: 'state-fills',
+                type: 'fill',
+                source: 'statesData',
+                sourceLayer: 'boundaries_admin_1',
+                'source-layer': 'boundaries_admin_1',
+                layout: {},
+                paint: {
+                    'fill-opacity': [
+                        'case',
+                        ['==', ['feature-state', 'companies'], null], 0,
+                        ['boolean', ['feature-state', 'hover'], false], 0.2,
+                        0
+                    ]
+                }
+            });
+
+            map.on('mousemove', 'state-fills', (e) => {
+                if (e.features.length > 0) {
+                    if (hoveredStateId !== null) {
+                        map.setFeatureState({ source: 'statesData', id: hoveredStateId, sourceLayer: 'boundaries_admin_1' }, { hover: false });
+                    }
+                    hoveredStateId = e.features[0].id;
+                    map.setFeatureState(
+                        { source: 'statesData', id: hoveredStateId, sourceLayer: 'boundaries_admin_1' },
+                        { hover: true }
+                    );
+                }
+            });
+                 
+            // When the mouse leaves the state-fill layer, update the feature state of the
+            // previously hovered feature.
+            map.on('mouseleave', 'state-fills', () => {
+                if (hoveredStateId !== null) {
+                    map.setFeatureState(
+                        { source: 'statesData', id: hoveredStateId, sourceLayer: 'boundaries_admin_1' },
+                        { hover: false }
+                    );
+                }
+                hoveredStateId = null;
+            });
 
             map.on('click', (e) => {
                 // Set `bbox` as 5px reactangle area around clicked point.
