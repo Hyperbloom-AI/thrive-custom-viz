@@ -78,6 +78,33 @@ looker.plugins.visualizations.add({
                 font-weight: 700;
                 background-color: #EDEDED;
             }
+
+            .legend-box {
+                display: flex;
+                flex-flow: row;
+                position: absolute;
+                background: rgba(255, 255, 255, 0.5);
+                padding: 5px 20px 5px 10px;
+                bottom: 35px;
+                left: 10px
+            }
+
+            .legend-bar {
+                height: 100px;
+                width: 10px;
+                background: linear-gradient(to top, rgba(255,237,234,0.8), rgba(179,18,31,0.8));
+                border-radius: 3px;
+            }
+
+            .legend-right {
+                display: flex;
+                flex-flow: column;
+                font-family: 'Roboto', sans-serif;
+                padding-left: 5px;
+                justify-content: space-between;
+                font-size: 12px;
+
+            }
             
         </style>`;
 
@@ -144,7 +171,8 @@ looker.plugins.visualizations.add({
     // Render in response to the data or settings changing
     updateAsync: function (data, element, config, queryResponse, details, done) {
 
-        var parentDiv = document.getElementById("vis");
+        const measureName = queryResponse.fields.measures[0].name
+        const measureLabel = queryResponse.fields.measures[0].label_short
 
         mapboxgl.accessToken = 'pk.eyJ1IjoiZHVuY2FuY2ZyYXNlciIsImEiOiJjbDRvbDlmZWQwMGdzM2ZxazZybTVkdDQ0In0.xL5_LBkos5tYRbLxR0tQRQ';
         const map = new mapboxgl.Map({
@@ -155,14 +183,16 @@ looker.plugins.visualizations.add({
             projection: 'globe'
         });
 
+        map.addControl(new mapboxgl.NavigationControl());
+
         map.on('load', () => {
             createViz();
         });
 
         function getMax(arr) {
             const set = data.filter(row => arr.hasOwnProperty(row["dim_zi_company_entities.zi_c_hq_state"].value))
-            let max = set.reduce((max, item) => max["dim_zi_company_entities.count"].value > item["dim_zi_company_entities.count"].value ? max : item);
-            return max["dim_zi_company_entities.count"].value
+            let max = set.reduce((max, item) => max[measureName].value > item[measureName].value ? max : item);
+            return max[measureName].value
         }
 
         function createViz() {
@@ -203,7 +233,7 @@ looker.plugins.visualizations.add({
                         'interpolate',
                         ['linear'],
                         ['feature-state', 'companies'],
-                        0,
+                        1,
                         'rgba(255,237,234,0.6)',
                         maxValue,
                         'rgba(179,18,31,0.6)'
@@ -213,7 +243,29 @@ looker.plugins.visualizations.add({
                   }
                 },
                 'waterway-label'
-              );
+            );
+
+            map.on('click', (e) => {
+                // Set `bbox` as 5px reactangle area around clicked point.
+                const bbox = [
+                    [e.point.x, e.point.y],
+                    [e.point.x, e.point.y]
+                ];
+
+                const selectedFeatures = map.queryRenderedFeatures(bbox, {
+                    layers: ['states-join']
+                });
+
+                const fips = selectedFeatures.map(
+                    (feature) => feature.properties.FIPS
+                );
+
+                const selectedFeatureFIPS = fips[0]
+
+                map.setFilter('states-join', ['in', 'FIPS', ...fips]);
+
+                console.log(selectedFeatures)
+            });
 
             function setStates() {
                 for (let i = 0; i < data.length; i++) {
@@ -228,11 +280,50 @@ looker.plugins.visualizations.add({
                             id: lookupData[row["dim_zi_company_entities.zi_c_hq_state"].value].feature_id
                         },
                         {
-                            companies: row["dim_zi_company_entities.count"].value
+                            companies: row[measureName].value
                         }
                     )
                 }
             }
+
+            function createLegend() {
+
+                try {
+                    const oldLegendBox = document.getElementById("mapboxLegend")
+                    oldLegendBox.parentNode.removeChild(oldLegendBox)
+                } catch {
+                    console.log("Unable to remove old legend because there is no old legend.")
+                }
+
+                const legendBox = document.createElement("div")
+                const legendLeft = document.createElement("div")
+                const legendRight = document.createElement("div")
+                const legendBar = document.createElement("div")
+                const legendRightTop = document.createElement("div")
+                const legendRightBottom = document.createElement("div")
+
+                legendBox.className = "legend-box"
+                legendLeft.className = "legend-left"
+                legendRight.className = "legend-right"
+                legendBar.className = "legend-bar"
+
+                legendRightTop.innerHTML = numberWithCommas(maxValue)
+                legendRightBottom.innerHTML = 1
+
+                legendLeft.appendChild(legendBar)
+
+                legendRight.appendChild(legendRightTop)
+                legendRight.appendChild(legendRightBottom)
+
+                legendBox.appendChild(legendLeft)
+                legendBox.appendChild(legendRight)
+
+                legendBox.id = "mapboxLegend"
+
+                element.appendChild(legendBox)
+            }
+
+            createLegend()
 
             // Check if `statesData` source is loaded.
             function setAfterLoad(event) {
