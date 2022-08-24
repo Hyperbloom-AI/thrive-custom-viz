@@ -4,8 +4,12 @@ import mapData from './mapbox-boundaries-adm1-v3_4.json';
 import regeneratorRuntime from "regenerator-runtime";
 import "core-js/stable";
 
+if (mapboxgl.version.indexOf('2.9.') === 0) Object.defineProperty(window, 'caches', { value: undefined });
 
 function numberWithCommas(x) {
+    if(!x) {
+        return undefined
+    }
     x = x.toFixed(0)
     var parts = x.toString().split(".");
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -105,7 +109,44 @@ looker.plugins.visualizations.add({
                 font-size: 12px;
 
             }
-            
+
+            .popup-inner {
+                padding: 10px 20px 15px 20px;
+            }
+
+            .popup-title {
+                font: 20px/25px 'Roboto', sans-serif;
+            }
+
+            .descriptor {
+                font: 10px/9px 'Roboto', sans-serif;
+                text-transform: uppercase;
+                color: #727171;
+            }
+
+            .number {
+                font: 20px/25px 'Roboto', sans-serif;
+            }
+
+            h2, h4 {
+                margin: 0
+            }
+
+            .popup-title__wrapper {
+                margin-bottom: 17px;
+            }
+
+            .descriptor__wrapper {
+                margin-bottom: 13.2px;
+                padding-bottom: 9px;
+                border-bottom: 1px solid #eaeaea;
+                min-width: 200px;
+                width: 100%;
+            }
+
+            .mapboxgl-popup-content {
+                border-radius: 0px !important;
+            }
         </style>`;
 
         const changeActive = (e) => {
@@ -186,6 +227,7 @@ looker.plugins.visualizations.add({
         let hoveredStateId = null; // Tracks hovered state and updates with popup
 
         map.addControl(new mapboxgl.NavigationControl());
+        map.addControl(new mapboxgl.FullscreenControl());
 
         map.on('load', () => {
             createViz();
@@ -230,11 +272,11 @@ looker.plugins.visualizations.add({
                   paint: {
                     'fill-color': [
                       'case',
-                      ['!=', ['feature-state', 'companies'], null],
+                      ['!=', ['feature-state', 'requestedKPI'], null],
                       [
                         'interpolate',
                         ['linear'],
-                        ['feature-state', 'companies'],
+                        ['feature-state', 'requestedKPI'],
                         1,
                         'rgba(255,237,234,0.6)',
                         maxValue,
@@ -247,27 +289,51 @@ looker.plugins.visualizations.add({
                 'waterway-label'
             );
 
-            map.addLayer({
-                id: 'state-fills',
-                type: 'fill',
-                source: 'statesData',
-                sourceLayer: 'boundaries_admin_1',
-                'source-layer': 'boundaries_admin_1',
-                layout: {},
-                paint: {
-                    'fill-opacity': [
-                        'case',
-                        ['==', ['feature-state', 'companies'], null], 0,
-                        ['boolean', ['feature-state', 'hover'], false], 0.2,
-                        0
-                    ]
-                }
+            const popup = new mapboxgl.Popup({
+                closeButton: false,
+                closeOnClick: false,
+                className: 'gtm-map-popup',
+                maxWidth: '300px'
             });
 
-            map.on('mousemove', 'state-fills', (e) => {
+
+            map.on('mousemove', 'states-join', (e) => {
                 if (e.features.length > 0) {
+
+                    const realCoords = [e.lngLat.lng, e.lngLat.lat]
+                    const reqKPI = e.features[0].state.requestedKPI;
+                    const state = e.features[0].state.name
+
+                    const description = `
+                    <div class="popup-inner">
+                        <div class="popup-inner__vertical">
+                            <div class="popup-title__wrapper">
+                                <h2 class="popup-title">${state}</h2>
+                            </div>
+                            <div class="popup-inner__horizontal">
+                                <div class="popup-inner__horizontal-inner__vertical">
+                                    <div class="descriptor__wrapper">
+                                        <h4 class="descriptor">${measureLabel}</h4>
+                                    </div>
+                                    <div class="number__wrapper">
+                                        <h4 class="number">${numberWithCommas(reqKPI)}</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`
+
+                    if(e.features[0].state.requestedKPI) {
+                        popup.setLngLat(realCoords).setHTML(description).addTo(map);
+                    } else {
+                        popup.remove
+                    }
+
                     if (hoveredStateId !== null) {
-                        map.setFeatureState({ source: 'statesData', id: hoveredStateId, sourceLayer: 'boundaries_admin_1' }, { hover: false });
+                        map.setFeatureState(
+                            { source: 'statesData', id: hoveredStateId, sourceLayer: 'boundaries_admin_1' }, 
+                            { hover: false }
+                        );
                     }
                     hoveredStateId = e.features[0].id;
                     map.setFeatureState(
@@ -279,12 +345,13 @@ looker.plugins.visualizations.add({
                  
             // When the mouse leaves the state-fill layer, update the feature state of the
             // previously hovered feature.
-            map.on('mouseleave', 'state-fills', () => {
+            map.on('mouseleave', 'states-join', () => {
                 if (hoveredStateId !== null) {
                     map.setFeatureState(
                         { source: 'statesData', id: hoveredStateId, sourceLayer: 'boundaries_admin_1' },
                         { hover: false }
                     );
+                    popup.remove();
                 }
                 hoveredStateId = null;
             });
@@ -300,14 +367,26 @@ looker.plugins.visualizations.add({
                     layers: ['states-join']
                 });
 
-                const fips = selectedFeatures.map(
-                    (feature) => feature.properties.FIPS
+                const name = selectedFeatures.map(
+                    (feature) => feature.state.name
                 );
 
-                const selectedFeatureFIPS = fips[0]
+                const selectedFeatureName = name[0]
 
-                map.setFilter('states-join', ['in', 'FIPS', ...fips]);
+                if(!lookupData.hasOwnProperty(selectedFeatureName)) {
+                    console.log("SELECTED FEATURE NAME")
+                    console.log(selectedFeatureName)
 
+                    console.log("SELECTED FEATURES:")
+                    console.log(selectedFeatures)
+
+                    console.log("Lookup data does not recognize this property.")
+                    return;
+                }
+
+                //map.setFilter('states-join', ['in', 'id', ...id]);
+
+                console.log("SELECTED FEATURES:")
                 console.log(selectedFeatures)
             });
 
@@ -324,7 +403,10 @@ looker.plugins.visualizations.add({
                             id: lookupData[row["dim_zi_company_entities.zi_c_hq_state"].value].feature_id
                         },
                         {
-                            companies: row[measureName].value
+                            requestedKPI: row[measureName].value,
+                            fipsCode: lookupData[row["dim_zi_company_entities.zi_c_hq_state"].value].unit_code,
+                            name: lookupData[row["dim_zi_company_entities.zi_c_hq_state"].value].name,
+                            hovered: false
                         }
                     )
                 }
@@ -400,15 +482,10 @@ looker.plugins.visualizations.add({
         // Clear any errors from previous updates
         this.clearErrors(queryResponse.fields);
 
-        /*if (queryResponse.fields.measures.length == 0 || queryResponse.fields.dimensions.length == 0) {
+        if (queryResponse.fields.measures.length == 0 || queryResponse.fields.dimensions.length == 0) {
             this.addError({ title: "No Measures or Dimensions", message: "This chart requires a measure and a dimension." });
             return;
-        }*/
-
-        console.log(queryResponse)
-
-        //var dimension = queryResponse.fields.dimensions[0]
-        //var measure = queryResponse.fields.measures[0]
+        }
 
         done()
     }
