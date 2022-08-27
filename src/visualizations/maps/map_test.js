@@ -1,6 +1,7 @@
-import mapboxgl from 'mapbox-gl'
-//var mapData = require('./somefile.json')
-import mapData from './mapbox-boundaries-adm1-v3_4.json';
+import mapboxgl from 'mapbox-gl';
+import stateData from './mapbox-boundaries-adm1-v3_4.json';
+import cbsaData from './mapbox-boundaries-sta1-v3_4.json';
+import zipData from './mapbox-boundaries-pos4-v3_4.json';
 import regeneratorRuntime from "regenerator-runtime";
 import "core-js/stable";
 
@@ -8,13 +9,13 @@ if (mapboxgl.version.indexOf('2.9.') === 0) Object.defineProperty(window, 'cache
 
 function numberWithCommas(x) {
     if(!x) {
-        return undefined
+        return undefined;
     }
-    x = x.toFixed(0)
+    x = x.toFixed(0);
     var parts = x.toString().split(".");
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     return parts.join(".");
-}
+};
 
 looker.plugins.visualizations.add({
     id: "hello_world",
@@ -89,7 +90,7 @@ looker.plugins.visualizations.add({
                 position: absolute;
                 background: rgba(255, 255, 255, 0.5);
                 padding: 5px 20px 5px 10px;
-                bottom: 35px;
+                bottom: 10px;
                 left: 10px
             }
 
@@ -147,73 +148,124 @@ looker.plugins.visualizations.add({
             .mapboxgl-popup-content {
                 border-radius: 0px !important;
             }
+
+            .mapboxgl-ctrl-bottom-right, .mapboxgl-ctrl-bottom-left {
+                display: none
+            }
+
+            .selected-locales__wrapper {
+                position: absolute;
+                bottom: 10px;
+                right: 10px;
+                z-index: 10;
+            }
+
+            .selected-locale {
+                background-color: black;
+                color: white;
+                font: 14px/20px 'Roboto', sans-serif;
+                padding: 12px 20px;
+                border-radius: 30px;
+                display: flex;
+                align-items: center;
+            }
+
+            .selected-locale__more {
+                background-color: #E8E7E7;
+                color: #151313;
+                border: 1px solid #000000;
+                padding: 12px;
+                font: 14px/20px 'Roboto', sans-serif;
+                border-radius: 30px;
+            }
+
+            #selectedLocaleContainer {
+                display: flex;
+                flex-flow: row nowrap;
+            }
+
+            .selected-locale:not(:last-child) {
+                margin-right: 5px;
+            }
+
+            .remove-icon {
+                margin-left: 25px;
+                cursor: pointer;
+            }
+
+            .selected-locale > div {
+                display: flex;
+            }
         </style>`;
 
-        const changeActive = (e) => {
+        this.__currentLayer = "states-join";
+        this.__LAYERNAMES = ["states-join"];
 
-            if(e.target.classList.contains("active")) {
-                return null
-            }
+        // Create the top layer selector bar
+        //###################################################################################//
 
-            const els = document.getElementsByClassName("map-paginator")
-            for (let i = 0; i < els.length; i++) {
-                if(els[i].classList.contains("active")) {
-                    els[i].classList.remove("active")
-                    e.target.classList.add("active")
-                    return null
-                }
-            }
-        }
+        this.__mapStatesButton = document.createElement('button');
+        this.__mapStatesButton.innerHTML = "States";
+        this.__mapStatesButton.className = "map-paginator active";
+        this.__mapStatesButton.id = "states-join";
 
-        this.__mapStatesButton = document.createElement('button')
-        this.__mapStatesButton.innerHTML = "States"
-        this.__mapStatesButton.className = "map-paginator active"
+        this.__mapCBSAsButton = document.createElement('button');
+        this.__mapCBSAsButton.innerHTML = "CBSAs";
+        this.__mapCBSAsButton.className = "map-paginator";
+        this.__mapCBSAsButton.id = "cbsas-join";
 
-        this.__mapCBSAsButton = document.createElement('button')
-        this.__mapCBSAsButton.innerHTML = "CBSAs"
-        this.__mapCBSAsButton.className = "map-paginator"
+        this.__mapZipCodesButton = document.createElement('button');
+        this.__mapZipCodesButton.innerHTML = "Zip Codes";
+        this.__mapZipCodesButton.className = "map-paginator";
+        this.__mapZipCodesButton.id = "zip-codes-join";
 
-        this.__mapZipCodesButton = document.createElement('button')
-        this.__mapZipCodesButton.innerHTML = "Zip Codes"
-        this.__mapZipCodesButton.className = "map-paginator"
+        this.__mapBEsButton = document.createElement('button');
+        this.__mapBEsButton.innerHTML = "Business Entities";
+        this.__mapBEsButton.className = "map-paginator";
+        this.__mapBEsButton.id = "business-entities-join";
 
-        this.__mapBEsButton = document.createElement('button')
-        this.__mapBEsButton.innerHTML = "Business Entities"
-        this.__mapBEsButton.className = "map-paginator"
+        this.__mapPaginatorWrapper = document.createElement('div');
+        this.__mapPaginatorWrapper.className = "map-paginator__wrapper";
 
-        this.__mapPaginatorWrapper = document.createElement('div')
-        this.__mapPaginatorWrapper.className = "map-paginator__wrapper"
+        this.__mapPaginatorWrapper.appendChild(this.__mapStatesButton);
+        this.__mapPaginatorWrapper.appendChild(this.__mapCBSAsButton);
+        this.__mapPaginatorWrapper.appendChild(this.__mapZipCodesButton);
+        this.__mapPaginatorWrapper.appendChild(this.__mapBEsButton);
 
-        this.__mapPaginatorWrapper.appendChild(this.__mapStatesButton)
-        this.__mapPaginatorWrapper.appendChild(this.__mapCBSAsButton)
-        this.__mapPaginatorWrapper.appendChild(this.__mapZipCodesButton)
-        this.__mapPaginatorWrapper.appendChild(this.__mapBEsButton)
+        element.appendChild(this.__mapPaginatorWrapper);
 
-        this.__mapStatesButton.addEventListener("click", changeActive)
-        this.__mapCBSAsButton.addEventListener("click", changeActive)
-        this.__mapZipCodesButton.addEventListener("click", changeActive)
-        this.__mapBEsButton.addEventListener("click", changeActive)
+        this.__selectedLocalesWrapper = document.createElement('div');
+        this.__selectedLocalesWrapper.className = "selected-locales__wrapper";
+        element.appendChild(this.__selectedLocalesWrapper);
 
-        element.appendChild(this.__mapPaginatorWrapper)
+        //###################################################################################//
 
-        this.__mapBox = document.createElement('div')
-        this.__mapBox.style.height = '100%'
-        this.__mapBox.style.width = '100%'
-        this.__mapBox.id = "map"
+        this.__mapBox = document.createElement('div');
+        this.__mapBox.style.height = '100%';
+        this.__mapBox.style.width = '100%';
+        this.__mapBox.id = "map";
 
-        element.appendChild(this.__mapBox)
+        element.appendChild(this.__mapBox);
 
         var link = document.createElement('link');
         link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.css';
         link.rel = 'stylesheet';
 
+        var script = document.createElement('script');
+        script.src = 'https://kit.fontawesome.com/f2060bf509.js';
+        script.crossOrigin = "anonymous";
+
         document.head.appendChild(link);
+        document.head.appendChild(script);
     },
     // Render in response to the data or settings changing
     updateAsync: function (data, element, config, queryResponse, details, done) {
 
-        const measureName = queryResponse.fields.measures[0].name
-        const measureLabel = queryResponse.fields.measures[0].label_short
+        let visualization = this
+
+        const measureName = queryResponse.fields.measures[0].name;
+        const measureLabel = queryResponse.fields.measures[0].label_short;
+        const localesWrapper = this.__selectedLocalesWrapper
 
         mapboxgl.accessToken = 'pk.eyJ1IjoiZHVuY2FuY2ZyYXNlciIsImEiOiJjbDRvbDlmZWQwMGdzM2ZxazZybTVkdDQ0In0.xL5_LBkos5tYRbLxR0tQRQ';
         const map = new mapboxgl.Map({
@@ -225,27 +277,95 @@ looker.plugins.visualizations.add({
         });
 
         let hoveredStateId = null; // Tracks hovered state and updates with popup
+        let filteredStateNames = [];
 
         map.addControl(new mapboxgl.NavigationControl());
         map.addControl(new mapboxgl.FullscreenControl());
 
         map.on('load', () => {
-            createViz();
+            createStatesViz();
+
+            this.__mapStatesButton.addEventListener("click", changeActive);
+            this.__mapCBSAsButton.addEventListener("click", changeActive);
+            this.__mapZipCodesButton.addEventListener("click", changeActive);
+            this.__mapBEsButton.addEventListener("click", changeActive);
         });
 
-        function getMax(arr) {
-            const set = data.filter(row => arr.hasOwnProperty(row["dim_zi_company_entities.zi_c_hq_state"].value))
+        const changeActive = (e) => {
+            console.log("IF START")
+            /*if(e.target.classList.contains("active")) {
+                console.log("TARGET CONTAINS ACTIVE RETURNING NULL");
+                console.log(e.target)
+                console.log("IF END")
+            } else {
+                console.log("ELSE START")
+                const els = document.getElementsByClassName("map-paginator");
+                for (let i = 0; i < els.length; i++) {
+                    if(els[i].classList.contains("active")) {
+                        els[i].classList.remove("active");
+                    };
+                };
+
+                e.target.classList.add("active");
+
+                this.__currentLayer = e.target.id;
+
+                for (let j = 0; j < this.__LAYERNAMES.length; j++) {
+                    //console.log("LOOPING LAYERNAMES: " + (j + 1) + "/" + this.__LAYERNAMES.length);
+                    if(this.__LAYERNAMES[j] !== e.target.id) {
+                        //console.log("this.__LAYERNAMES[j] !== e.target.id");
+                        //console.log(this.__LAYERNAMES[j]);
+                        map.setLayoutProperty(this.__LAYERNAMES[j], 'visibility', 'none');
+                    };
+                };
+
+                if(this.__LAYERNAMES.includes(e.target.id)) {
+                    console.log("ID IS PRESENT IN ARRAY");
+                    map.setLayoutProperty(e.target.id, 'visibility', 'visible');
+                }
+                console.log("ELSE END")
+            }*/
+
+            if(!e.target.classList.contains("active")) {
+                const els = document.getElementsByClassName("map-paginator");
+                for (let i = 0; i < els.length; i++) {
+                    if(els[i].classList.contains("active")) {
+                        els[i].classList.remove("active");
+                    };
+                };
+
+                e.target.classList.add("active");
+
+                for (let j = 0; j < this.__LAYERNAMES.length; j++) {
+                    //console.log("LOOPING LAYERNAMES: " + (j + 1) + "/" + this.__LAYERNAMES.length);
+                    if(this.__LAYERNAMES[j] !== e.target.id) {
+                        //console.log("this.__LAYERNAMES[j] !== e.target.id");
+                        //console.log(this.__LAYERNAMES[j]);
+                        map.setLayoutProperty(this.__LAYERNAMES[j], 'visibility', 'none');
+                    };
+                };
+
+                if(this.__LAYERNAMES.includes(e.target.id)) {
+                    console.log("ID IS PRESENT IN ARRAY");
+                    map.setLayoutProperty(e.target.id, 'visibility', 'visible');
+                }
+                console.log("IF END")
+            }
+        }
+
+        function getMaxState(arr) {
+            const set = data.filter(row => arr.hasOwnProperty(row["dim_zi_company_entities.zi_c_hq_state"].value));
             let max = set.reduce((max, item) => max[measureName].value > item[measureName].value ? max : item);
             return max[measureName].value
         }
 
-        function createViz() {
+        function createStatesViz() {
             const lookupData = filterLookupTable();
 
             function filterLookupTable(lookupTable) {
                 const lookupData = {};
     
-                const searchData = mapData.adm1.data.all
+                const searchData = stateData.adm1.data.all
     
                 Object.keys(searchData).forEach(function(key) {
                     const featureData = searchData[key]
@@ -261,33 +381,26 @@ looker.plugins.visualizations.add({
                 url: 'mapbox://mapbox.boundaries-adm1-v3'
             });
 
-            const maxValue = getMax(lookupData)
+            const maxValue = getMaxState(lookupData)
 
-            map.addLayer(
-                {
-                  id: 'states-join',
-                  type: 'fill',
-                  source: 'statesData',
-                  'source-layer': 'boundaries_admin_1',
-                  paint: {
-                    'fill-color': [
-                      'case',
-                      ['!=', ['feature-state', 'requestedKPI'], null],
-                      [
-                        'interpolate',
-                        ['linear'],
-                        ['feature-state', 'requestedKPI'],
-                        1,
-                        'rgba(255,237,234,0.6)',
-                        maxValue,
-                        'rgba(179,18,31,0.6)'
-                      ],
-                      'rgba(255, 255, 255, 0)'
-                    ]
-                  }
+            map.addLayer({
+                id: 'states-join',
+                type: 'fill',
+                source: 'statesData',
+                'layout': {
+                    // Make the layer visible by default.
+                    'visibility': 'visible'
                 },
-                'waterway-label'
-            );
+                'source-layer': 'boundaries_admin_1',
+                paint: {
+                    'fill-color': [
+                        // In the case that 'feature-state': 'requestedKPI' is not null, interpolate the colors between the min and max, if it is null make the layer white.
+                        'case',
+                        ['!=', ['feature-state', 'requestedKPI'], null], ['interpolate', ['linear'], ['feature-state', 'requestedKPI'], 1, 'rgba(255,237,234,0.6)', maxValue, 'rgba(179,18,31,0.6)'],
+                        'rgba(255, 255, 255, 0)'
+                    ]
+                }
+            }, 'waterway-label');
 
             const popup = new mapboxgl.Popup({
                 closeButton: false,
@@ -374,20 +487,22 @@ looker.plugins.visualizations.add({
                 const selectedFeatureName = name[0]
 
                 if(!lookupData.hasOwnProperty(selectedFeatureName)) {
-                    console.log("SELECTED FEATURE NAME")
-                    console.log(selectedFeatureName)
-
-                    console.log("SELECTED FEATURES:")
-                    console.log(selectedFeatures)
-
                     console.log("Lookup data does not recognize this property.")
                     return;
                 }
 
                 //map.setFilter('states-join', ['in', 'id', ...id]);
 
-                console.log("SELECTED FEATURES:")
-                console.log(selectedFeatures)
+                //console.log("SELECTED FEATURES:")
+                //console.log(selectedFeatures)
+
+                if(filteredStateNames.includes(selectedFeatureName)) {
+                    return null;
+                }
+
+                filteredStateNames.push(selectedFeatureName)
+
+                runSelectionUpdate(localesWrapper);
             });
 
             function setStates() {
@@ -411,6 +526,55 @@ looker.plugins.visualizations.add({
                     )
                 }
             }
+
+            function runSelectionUpdate(element) {
+                const prevParent = document.getElementById("selectedLocaleContainer");
+                if(prevParent) {
+                    element.removeChild(prevParent)
+                };
+
+                const parent = document.createElement("div");
+                parent.id = "selectedLocaleContainer";
+
+                for(let i = 0; i < filteredStateNames.length; i++) {
+                    if(i > 1) {
+                        const moreWrapper = document.createElement("div")
+                        moreWrapper.className = "selected-locale__more"
+                        const moreText = document.createElement("span")
+                        moreText.innerHTML = `+${filteredStateNames.length - 2} more locales`;
+                        moreWrapper.appendChild(moreText)
+                        parent.appendChild(moreWrapper)
+                        break;
+                    }
+                    const selectedLocale = document.createElement("div")
+                    const selectedLocaleText = document.createElement("span")
+                    const removeButton = document.createElement('div')
+                    removeButton.innerHTML = '<i class="fa-solid fa-xmark remove-icon" aria-hidden="true"></i>';
+
+                    removeButton.addEventListener("click", () => {
+                        filteredStateNames.splice(i, 1)
+                        runSelectionUpdate(element)
+                    })
+
+                    selectedLocaleText.innerHTML = filteredStateNames[i]
+                    selectedLocale.className = "selected-locale"
+
+                    selectedLocale.appendChild(selectedLocaleText)
+                    selectedLocale.appendChild(removeButton)
+                    parent.appendChild(selectedLocale)
+                }
+
+                console.log("ABOUT TO TRIGGER FILTER")
+                console.log(visualization)
+
+                visualization.trigger("filter", [{
+                    field: "dim_zi_company_entities.zi_c_hq_state", // the name of the field to filter
+                    value: filteredStateNames.join(","), // the "advanced syntax" for the filter
+                    run: true, // whether to re-run the query with the new filter
+                }]);
+                
+                element.appendChild(parent)
+            };
 
             function createLegend() {
 
@@ -466,7 +630,221 @@ looker.plugins.visualizations.add({
             }
         }
 
-  
+        function createCBSAsViz() {
+            const lookupData = filterLookupTable();
+
+            function filterLookupTable(lookupTable) {
+                const lookupData = {};
+    
+                const searchData = cbsaData.sta1.data.all
+    
+                Object.keys(searchData).forEach(function(key) {
+                    const featureData = searchData[key]
+                    if(featureData.iso_3166_1 === 'US') {
+                        lookupData[featureData['name']] = featureData
+                    }
+                })
+                return lookupData;
+            }
+
+            map.addSource('cbsaData', {
+                type: 'vector',
+                url: 'mapbox://mapbox.boundaries-sta1-v3'
+            });
+
+            const maxValue = getMax(lookupData)
+
+            map.addLayer({
+                id: 'cbsas-join',
+                type: 'fill',
+                source: 'cbsaData',
+                'layout': {
+                    // Make the layer visible by default.
+                    'visibility': 'visible'
+                },
+                'source-layer': 'boundaries_stats_1',
+                paint: {
+                    'fill-color': [
+                        // In the case that 'feature-state': 'requestedKPI' is not null, interpolate the colors between the min and max, if it is null make the layer white.
+                        'case',
+                        ['!=', ['feature-state', 'requestedKPI'], null], ['interpolate', ['linear'], ['feature-state', 'requestedKPI'], 1, 'rgba(255,237,234,0.6)', maxValue, 'rgba(179,18,31,0.6)'],
+                        'rgba(255, 255, 255, 0)'
+                    ]
+                }
+            }, 'waterway-label');
+
+            const popup = new mapboxgl.Popup({
+                closeButton: false,
+                closeOnClick: false,
+                className: 'gtm-map-popup',
+                maxWidth: '300px'
+            });
+
+
+            map.on('mousemove', 'cbsas-join', (e) => {
+                if (e.features.length > 0) {
+
+                    const realCoords = [e.lngLat.lng, e.lngLat.lat]
+                    const reqKPI = e.features[0].state.requestedKPI;
+                    const cbsa = e.features[0].state.name
+
+                    const description = `
+                    <div class="popup-inner">
+                        <div class="popup-inner__vertical">
+                            <div class="popup-title__wrapper">
+                                <h2 class="popup-title">${scbsa}</h2>
+                            </div>
+                            <div class="popup-inner__horizontal">
+                                <div class="popup-inner__horizontal-inner__vertical">
+                                    <div class="descriptor__wrapper">
+                                        <h4 class="descriptor">${measureLabel}</h4>
+                                    </div>
+                                    <div class="number__wrapper">
+                                        <h4 class="number">${numberWithCommas(reqKPI)}</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`
+
+                    if(e.features[0].state.requestedKPI) {
+                        popup.setLngLat(realCoords).setHTML(description).addTo(map);
+                    } else {
+                        popup.remove
+                    }
+
+                    if (hoveredStateId !== null) {
+                        map.setFeatureState(
+                            { source: 'cbsaData', id: hoveredStateId, sourceLayer: 'boundaries_stats_1' }, 
+                            { hover: false }
+                        );
+                    }
+                    hoveredStateId = e.features[0].id;
+                    map.setFeatureState(
+                        { source: 'cbsaData', id: hoveredStateId, sourceLayer: 'boundaries_stats_1' },
+                        { hover: true }
+                    );
+                }
+            });
+                 
+            // When the mouse leaves the state-fill layer, update the feature state of the
+            // previously hovered feature.
+            map.on('mouseleave', 'cbsas-join', () => {
+                if (hoveredStateId !== null) {
+                    map.setFeatureState(
+                        { source: 'cbsaData', id: hoveredStateId, sourceLayer: 'boundaries_stats_1' },
+                        { hover: false }
+                    );
+                    popup.remove();
+                }
+                hoveredStateId = null;
+            });
+
+            map.on('click', (e) => {
+                // Set `bbox` as 5px reactangle area around clicked point.
+                const bbox = [
+                    [e.point.x, e.point.y],
+                    [e.point.x, e.point.y]
+                ];
+
+                const selectedFeatures = map.queryRenderedFeatures(bbox, {
+                    layers: ['cbsas-join']
+                });
+
+                const name = selectedFeatures.map(
+                    (feature) => feature.state.name
+                );
+
+                const selectedFeatureName = name[0]
+
+                if(!lookupData.hasOwnProperty(selectedFeatureName)) {
+                    console.log("Lookup data does not recognize this property.")
+                    return;
+                }
+
+                //map.setFilter('states-join', ['in', 'id', ...id]);
+
+                console.log("SELECTED FEATURES:")
+                console.log(selectedFeatures)
+
+                filteredStateNames.push(selectedFeatureName)
+                console.log("SELECTED STATES: " + filteredStateNames.join(", "))
+            });
+
+            function setStates() {
+                for (let i = 0; i < data.length; i++) {
+                    const row = data[i]
+                    if(!lookupData.hasOwnProperty(row["dim_zi_company_entities.zi_c_hq_state"].value)) {
+                        continue;
+                    }
+                    map.setFeatureState(
+                        {
+                            source: "cbsaData",
+                            sourceLayer: 'boundaries_stats_1',
+                            id: lookupData[row["dim_zi_company_entities.zi_c_hq_state"].value].feature_id
+                        },
+                        {
+                            requestedKPI: row[measureName].value,
+                            name: lookupData[row["dim_zi_company_entities.zi_c_hq_state"].value].name,
+                            hovered: false
+                        }
+                    )
+                }
+            }
+
+            function createLegend() {
+
+                try {
+                    const oldLegendBox = document.getElementById("mapboxLegend")
+                    oldLegendBox.parentNode.removeChild(oldLegendBox)
+                } catch {
+                    console.log("Unable to remove old legend because there is no old legend.")
+                }
+
+                const legendBox = document.createElement("div")
+                const legendLeft = document.createElement("div")
+                const legendRight = document.createElement("div")
+                const legendBar = document.createElement("div")
+                const legendRightTop = document.createElement("div")
+                const legendRightBottom = document.createElement("div")
+
+                legendBox.className = "legend-box"
+                legendLeft.className = "legend-left"
+                legendRight.className = "legend-right"
+                legendBar.className = "legend-bar"
+
+                legendRightTop.innerHTML = numberWithCommas(maxValue)
+                legendRightBottom.innerHTML = 1
+
+                legendLeft.appendChild(legendBar)
+
+                legendRight.appendChild(legendRightTop)
+                legendRight.appendChild(legendRightBottom)
+
+                legendBox.appendChild(legendLeft)
+                legendBox.appendChild(legendRight)
+
+                legendBox.id = "mapboxLegend"
+
+                element.appendChild(legendBox)
+            }
+
+            createLegend()
+
+            // Check if `statesData` source is loaded.
+            function setAfterLoad(event) {
+                if (event.sourceID !== 'cbsaData' && !event.isSourceLoaded) return;
+                setStates();
+                map.off('sourcedata', setAfterLoad);
+            }
+    
+            // If `statesData` source is loaded, call `setStates()`.
+            if (map.isSourceLoaded('statesData')) {
+                setStates();
+            } else {
+                map.on('sourcedata', setAfterLoad);
+            }
+        }
 
         map.on('style.load', () => {
             map.setFog({
@@ -477,7 +855,6 @@ looker.plugins.visualizations.add({
                 'star-intensity': 0.6 // Background star brightness (default 0.35 at low zoooms )
             }); // Set the default atmosphere style
         });
-
         
         // Clear any errors from previous updates
         this.clearErrors(queryResponse.fields);
@@ -486,6 +863,9 @@ looker.plugins.visualizations.add({
             this.addError({ title: "No Measures or Dimensions", message: "This chart requires a measure and a dimension." });
             return;
         }
+
+        console.log("query response")
+        console.log(queryResponse)
 
         done()
     }
