@@ -284,49 +284,18 @@ looker.plugins.visualizations.add({
 
         map.on('load', () => {
             createStatesViz();
+        });
 
+        map.on('idle', () => {
             this.__mapStatesButton.addEventListener("click", changeActive);
             this.__mapCBSAsButton.addEventListener("click", changeActive);
             this.__mapZipCodesButton.addEventListener("click", changeActive);
             this.__mapBEsButton.addEventListener("click", changeActive);
-        });
+        })
 
         const changeActive = (e) => {
-            console.log("IF START")
-            /*if(e.target.classList.contains("active")) {
-                console.log("TARGET CONTAINS ACTIVE RETURNING NULL");
-                console.log(e.target)
-                console.log("IF END")
-            } else {
-                console.log("ELSE START")
-                const els = document.getElementsByClassName("map-paginator");
-                for (let i = 0; i < els.length; i++) {
-                    if(els[i].classList.contains("active")) {
-                        els[i].classList.remove("active");
-                    };
-                };
-
-                e.target.classList.add("active");
-
-                this.__currentLayer = e.target.id;
-
-                for (let j = 0; j < this.__LAYERNAMES.length; j++) {
-                    //console.log("LOOPING LAYERNAMES: " + (j + 1) + "/" + this.__LAYERNAMES.length);
-                    if(this.__LAYERNAMES[j] !== e.target.id) {
-                        //console.log("this.__LAYERNAMES[j] !== e.target.id");
-                        //console.log(this.__LAYERNAMES[j]);
-                        map.setLayoutProperty(this.__LAYERNAMES[j], 'visibility', 'none');
-                    };
-                };
-
-                if(this.__LAYERNAMES.includes(e.target.id)) {
-                    console.log("ID IS PRESENT IN ARRAY");
-                    map.setLayoutProperty(e.target.id, 'visibility', 'visible');
-                }
-                console.log("ELSE END")
-            }*/
-
             if(!e.target.classList.contains("active")) {
+                // Updates the nav-bar active status
                 const els = document.getElementsByClassName("map-paginator");
                 for (let i = 0; i < els.length; i++) {
                     if(els[i].classList.contains("active")) {
@@ -336,20 +305,21 @@ looker.plugins.visualizations.add({
 
                 e.target.classList.add("active");
 
+                // Updates the layers' active status
                 for (let j = 0; j < this.__LAYERNAMES.length; j++) {
-                    //console.log("LOOPING LAYERNAMES: " + (j + 1) + "/" + this.__LAYERNAMES.length);
                     if(this.__LAYERNAMES[j] !== e.target.id) {
-                        //console.log("this.__LAYERNAMES[j] !== e.target.id");
-                        //console.log(this.__LAYERNAMES[j]);
                         map.setLayoutProperty(this.__LAYERNAMES[j], 'visibility', 'none');
+                        map.setLayoutProperty("states-join", 'visibility', 'none'); // Does the same as the line above, present for debug.
                     };
                 };
 
                 if(this.__LAYERNAMES.includes(e.target.id)) {
-                    console.log("ID IS PRESENT IN ARRAY");
                     map.setLayoutProperty(e.target.id, 'visibility', 'visible');
                 }
-                console.log("IF END")
+
+                console.log("DEBUG: GETTING LAYER VISIBILITY")
+                const visibility = map.getLayoutProperty("states-join",'visibility');
+                console.log(visibility)
             }
         }
 
@@ -486,22 +456,11 @@ looker.plugins.visualizations.add({
 
                 const selectedFeatureName = name[0]
 
-                if(!lookupData.hasOwnProperty(selectedFeatureName)) {
-                    console.log("Lookup data does not recognize this property.")
+                if(!lookupData.hasOwnProperty(selectedFeatureName) || filteredStateNames.includes(selectedFeatureName)) {
                     return;
                 }
 
-                //map.setFilter('states-join', ['in', 'id', ...id]);
-
-                //console.log("SELECTED FEATURES:")
-                //console.log(selectedFeatures)
-
-                if(filteredStateNames.includes(selectedFeatureName)) {
-                    return null;
-                }
-
                 filteredStateNames.push(selectedFeatureName)
-
                 runSelectionUpdate(localesWrapper);
             });
 
@@ -758,17 +717,12 @@ looker.plugins.visualizations.add({
                 const selectedFeatureName = name[0]
 
                 if(!lookupData.hasOwnProperty(selectedFeatureName)) {
-                    console.log("Lookup data does not recognize this property.")
                     return;
                 }
 
                 //map.setFilter('states-join', ['in', 'id', ...id]);
 
-                console.log("SELECTED FEATURES:")
-                console.log(selectedFeatures)
-
                 filteredStateNames.push(selectedFeatureName)
-                console.log("SELECTED STATES: " + filteredStateNames.join(", "))
             });
 
             function setStates() {
@@ -864,8 +818,8 @@ looker.plugins.visualizations.add({
             return;
         }
 
-        console.log("query response")
-        console.log(queryResponse)
+        //console.log("query response")
+        //console.log(queryResponse)
 
         done()
     }
