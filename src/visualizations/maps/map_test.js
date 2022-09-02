@@ -294,6 +294,9 @@ looker.plugins.visualizations.add({
         })
 
         const changeActive = (e) => {
+            /* For reference, e.target is one of the buttons on top of the map. 
+            The event listeners are added in a map.on('idle', () => {}) but have
+            previously been added in map.on('load', () => {}) to the same effect*/
             if(!e.target.classList.contains("active")) {
                 // Updates the nav-bar active status
                 const els = document.getElementsByClassName("map-paginator");
