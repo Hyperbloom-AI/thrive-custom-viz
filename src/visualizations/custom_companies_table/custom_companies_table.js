@@ -340,7 +340,7 @@ looker.plugins.visualizations.add({
             const companyDescriptionWrapper = tdCompanyDescription.appendChild(document.createElement('div'))
             companyDescriptionWrapper.className = "company-description"
             //const rowDescription = row["dim_zi_company_entities.zi_c_company_url"].value
-            companyDescriptionWrapper.innerHTML = `<span>${"<Company Description>"}</span>`
+            companyDescriptionWrapper.innerHTML = `<span>${"[Company Description]"}</span>`
 
             const tdCompanyLocationCount = rowEl.appendChild(document.createElement("td"))
             const companyLocationCountWrapper = tdCompanyLocationCount.appendChild(document.createElement('div'))
