@@ -217,6 +217,11 @@ looker.plugins.visualizations.add({
                 font: 14px/16px Helvetica;
             }
 
+            .company-website {
+                color: #BC3733;
+                cursor: pointer;
+            }
+
             table {
                 padding-left: 22px
             }
@@ -334,7 +339,7 @@ looker.plugins.visualizations.add({
             const companyWebsiteWrapper = tdCompanyWebsite.appendChild(document.createElement('div'))
             companyWebsiteWrapper.className = "company-website"
             const rowWebsite = row["dim_zi_company_entities.zi_c_company_url"].value
-            companyWebsiteWrapper.innerHTML = `<span>${rowWebsite}</span>`
+            companyWebsiteWrapper.innerHTML = `<a href=${rowWebsite}>${rowWebsite}</a>`
 
             const tdCompanyDescription = rowEl.appendChild(document.createElement("td"))
             const companyDescriptionWrapper = tdCompanyDescription.appendChild(document.createElement('div'))
