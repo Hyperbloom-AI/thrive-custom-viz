@@ -212,7 +212,7 @@ looker.plugins.visualizations.add({
                 margin-right: 50px;
             }
 
-            .company-intent, .revenue-range, .employee-range, .business-type {
+            .company-intent, .revenue-range, .employee-range, .business-type, .company-description, .company-website {
                 font: 14px/16px Helvetica;
             }
 
