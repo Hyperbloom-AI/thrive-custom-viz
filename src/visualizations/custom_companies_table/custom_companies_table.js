@@ -217,9 +217,9 @@ looker.plugins.visualizations.add({
                 font: 14px/16px Helvetica;
             }
 
-            .company-website {
-                color: #BC3733;
-                cursor: pointer;
+            .company-website a {
+                color: #BC3733 !important;
+                cursor: pointer !important;
             }
 
             table {
