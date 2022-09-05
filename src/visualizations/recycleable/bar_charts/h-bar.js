@@ -8,24 +8,10 @@ function numberWithCommas(x) {
 }
 
 looker.plugins.visualizations.add({
-    id: "hello_world",
-    label: "Hello World",
-    options: {
-        font_size: {
-            type: "string",
-            label: "Font Size",
-            values: [
-                { "Large": "large" },
-                { "Small": "small" }
-            ],
-            display: "radio",
-            default: "large"
-        }
-    },
-    // Set up the initial state of the visualization
+    id: "thrive_reusable_horizontal_bar_graph",
+    label: "Horizontal Bar Graph",
     create: function (element, config) {
 
-        // Insert a <style> tag with some styles we'll use later.
         element.innerHTML = `
         <style>
 
