@@ -213,8 +213,13 @@ looker.plugins.visualizations.add({
                 margin-right: 50px;
             }
 
-            .company-location-count, .revenue-range, .employee-range, .business-type {
+            .company-location-count, .revenue-range, .employee-range, .business-type, .company-description, .company-website {
                 font: 14px/16px Helvetica;
+            }
+
+            .company-website a {
+                color: #BC3733 !important;
+                cursor: pointer !important;
             }
 
             table {
@@ -254,6 +259,15 @@ looker.plugins.visualizations.add({
         var thCompanyName = tableHeadRow.appendChild(document.createElement("th"))
         var thCompanyNameDiv = thCompanyName.appendChild(document.createElement("div"))
         thCompanyNameDiv.innerHTML = "Company Name"
+
+        var thCompanyName = tableHeadRow.appendChild(document.createElement("th"))
+        var thCompanyNameDiv = thCompanyName.appendChild(document.createElement("div"))
+        thCompanyNameDiv.innerHTML = "Company Website"
+
+        var thCompanyName = tableHeadRow.appendChild(document.createElement("th"))
+        var thCompanyNameDiv = thCompanyName.appendChild(document.createElement("div"))
+        thCompanyNameDiv.innerHTML = "Company Description"
+
         var thLocatationCount = tableHeadRow.appendChild(document.createElement("th"))
         var thLocatationCountDiv = thLocatationCount.appendChild(document.createElement("div"))
         thLocatationCountDiv.innerHTML = "Location Count"
@@ -320,6 +334,19 @@ looker.plugins.visualizations.add({
             const tdLocaleNumberHalf__number = tdLocaleNumberHalf.appendChild(document.createElement('div'))
             const companyID = row["dim_zi_company_entities.zi_c_company_id"].value
             tdLocaleNumberHalf__number.innerHTML = `<span>${companyID}</span>`
+
+            const tdCompanyWebsite = rowEl.appendChild(document.createElement("td"))
+            const companyWebsiteWrapper = tdCompanyWebsite.appendChild(document.createElement('div'))
+            companyWebsiteWrapper.className = "company-website"
+            const rowWebsite = row["dim_zi_company_entities.zi_c_company_url"].value
+            companyWebsiteWrapper.innerHTML = `<a href=${rowWebsite}>${rowWebsite}</a>`
+
+            const tdCompanyDescription = rowEl.appendChild(document.createElement("td"))
+            const companyDescriptionWrapper = tdCompanyDescription.appendChild(document.createElement('div'))
+            companyDescriptionWrapper.className = "company-description"
+            //const rowDescription = row["dim_zi_company_entities.zi_c_company_url"].value
+            companyDescriptionWrapper.innerHTML = `<span>${"[Company Description]"}</span>`
+
             const tdCompanyLocationCount = rowEl.appendChild(document.createElement("td"))
             const companyLocationCountWrapper = tdCompanyLocationCount.appendChild(document.createElement('div'))
             companyLocationCountWrapper.className = "company-location-count"
