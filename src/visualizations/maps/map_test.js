@@ -489,7 +489,7 @@ looker.plugins.visualizations.add({
                 }
             }
 
-            function runSelectionUpdate(element) {
+            async function runSelectionUpdate(element) {
                 const prevParent = document.getElementById("selectedLocaleContainer");
                 if(prevParent) {
                     element.removeChild(prevParent)
@@ -529,11 +529,17 @@ looker.plugins.visualizations.add({
                 console.log("ABOUT TO TRIGGER FILTER")
                 console.log(visualization)
 
-                visualization.trigger("filter", [{
+                console.log("Values:")
+                console.log(filteredStateNames.join(","))
+
+                const response = await visualization.trigger("filter", [{
                     field: "dim_zi_company_entities.zi_c_hq_state", // the name of the field to filter
                     value: filteredStateNames.join(","), // the "advanced syntax" for the filter
                     run: true, // whether to re-run the query with the new filter
                 }]);
+
+                console.log("RESPONSE")
+                console.log(response)
                 
                 element.appendChild(parent)
             };
@@ -821,8 +827,8 @@ looker.plugins.visualizations.add({
             return;
         }
 
-        //console.log("query response")
-        //console.log(queryResponse)
+        console.log("query response")
+        console.log(queryResponse)
 
         done()
     }
