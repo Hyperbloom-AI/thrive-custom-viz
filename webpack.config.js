@@ -12,10 +12,10 @@ var webpackConfig = {
     custom_companies_synopsis: './src/visualizations/custom/synopses/custom_companies_synopsis.js',
     custom_intent_synopsis: './src/visualizations/custom/synopses/custom_intent_synopsis_firebolt.js',
     firebolt_intent_synopsis: './src/visualizations/custom/synopses/custom_intent_synopsis_firebolt.js',
-    horizontal_bar: './src/visualizations/recycleable/bar_charts/h-bar.js',
-    vertical_bar: './src/visualizations/recycleable/bar_charts/v-bar.js',
+    horizontal_bar: './src/visualizations/recycleable/bar_charts/h_bar.js',
+    vertical_bar: './src/visualizations/recycleable/bar_charts/v_bar.js',
     line: './src/visualizations/recycleable/line_charts/line.js',
-    custom_pbg_table: './src/visualizations/custom/tables/custom-pbg-table.js',
+    custom_pbg_table: './src/visualizations/custom/tables/custom_pbg_table.js',
     map_test: './src/visualizations/custom/maps/map_test.js',
   },
   output: {

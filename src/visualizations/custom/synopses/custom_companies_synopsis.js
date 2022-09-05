@@ -5,20 +5,8 @@ function numberWithCommas(x) {
 }
 
 looker.plugins.visualizations.add({
-    id: "hello_world",
-    label: "Hello World",
-    options: {
-      font_size: {
-        type: "string",
-        label: "Font Size",
-        values: [
-          {"Large": "large"},
-          {"Small": "small"}
-        ],
-        display: "radio",
-        default: "large"
-      }
-    },
+    id: "thrive_custom_companies_synopsis",
+    label: "Custom Companies Synopsis",
     // Set up the initial state of the visualization
     create: function(element, config) {
   

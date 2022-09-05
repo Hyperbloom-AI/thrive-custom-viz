@@ -36,20 +36,8 @@ function getAverage(arr, property) {
 }
 
 looker.plugins.visualizations.add({
-    id: "thrive_table",
-    label: "Company Detail",
-    options: {
-        font_size: {
-            type: "string",
-            label: "Font Size",
-            values: [
-                { "Large": "large" },
-                { "Small": "small" }
-            ],
-            display: "radio",
-            default: "large"
-        }
-    },
+    id: "thrive_custom_pbg_table",
+    label: "Custom PBG Table",
     // Set up the initial state of the visualization
     create: function (element, config) {
 

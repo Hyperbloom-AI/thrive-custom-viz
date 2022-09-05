@@ -18,20 +18,8 @@ function numberWithCommas(x) {
 };
 
 looker.plugins.visualizations.add({
-    id: "hello_world",
-    label: "Hello World",
-    options: {
-        font_size: {
-            type: "string",
-            label: "Font Size",
-            values: [
-                { "Large": "large" },
-                { "Small": "small" }
-            ],
-            display: "radio",
-            default: "large"
-        }
-    },
+    id: "thrive_custom_special_granularity_map",
+    label: "Custom Layered Mapbox Map",
     // Set up the initial state of the visualization
     create: function (element, config) {
 

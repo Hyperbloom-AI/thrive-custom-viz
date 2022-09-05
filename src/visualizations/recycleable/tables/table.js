@@ -8,8 +8,8 @@ function numberWithCommas(x) {
 }
 
 looker.plugins.visualizations.add({
-    id: "thrive_reusable_line_chart",
-    label: "Line Chart",
+    id: "thrive_reusable_table",
+    label: "Reusable Table",
     // Set up the initial state of the visualization
     create: function (element, config) {
 
@@ -72,13 +72,13 @@ looker.plugins.visualizations.add({
             return;
         }
 
-        var dimension = queryResponse.fields.dimensions[0]
-        var measure = queryResponse.fields.measures[0]
+        var dimensions = queryResponse.fields.dimensions
+        var measures = queryResponse.fields.measures
 
-        var dimensionName = dimension.name
+        /*var dimensionName = dimension.name
         var dimensionLabel = dimension.label_short
         var measureName = measure.name
-        var measureLabel = measure.label_short
+        var measureLabel = measure.label_short*/
 
         done()
     }
