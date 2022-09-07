@@ -252,10 +252,6 @@ looker.plugins.visualizations.add({
         var thCompanyNameDiv = thCompanyName.appendChild(document.createElement("div"))
         thCompanyNameDiv.innerHTML = "Company Website"
 
-        var thCompanyName = tableHeadRow.appendChild(document.createElement("th"))
-        var thCompanyNameDiv = thCompanyName.appendChild(document.createElement("div"))
-        thCompanyNameDiv.innerHTML = "Company Description"
-
         var thLocatationCount = tableHeadRow.appendChild(document.createElement("th"))
         var thLocatationCountDiv = thLocatationCount.appendChild(document.createElement("div"))
         thLocatationCountDiv.innerHTML = "Location Count"
@@ -328,12 +324,6 @@ looker.plugins.visualizations.add({
             companyWebsiteWrapper.className = "company-website"
             const rowWebsite = row["dim_zi_company_entities.zi_c_company_url"].value
             companyWebsiteWrapper.innerHTML = `<a href=${rowWebsite}>${rowWebsite}</a>`
-
-            const tdCompanyDescription = rowEl.appendChild(document.createElement("td"))
-            const companyDescriptionWrapper = tdCompanyDescription.appendChild(document.createElement('div'))
-            companyDescriptionWrapper.className = "company-description"
-            //const rowDescription = row["dim_zi_company_entities.zi_c_company_url"].value
-            companyDescriptionWrapper.innerHTML = `<span>${"[Company Description]"}</span>`
 
             const tdCompanyLocationCount = rowEl.appendChild(document.createElement("td"))
             const companyLocationCountWrapper = tdCompanyLocationCount.appendChild(document.createElement('div'))
