@@ -330,7 +330,7 @@ looker.plugins.visualizations.add({
             const companyWebsiteWrapper = tdCompanyWebsite.appendChild(document.createElement('div'))
             companyWebsiteWrapper.className = "company-website"
             const rowWebsite = row["dim_zi_company_entities.zi_c_company_url"].value
-            companyWebsiteWrapper.innerHTML = `<a href=${rowWebsite}>${rowWebsite}</a>`
+            companyWebsiteWrapper.innerHTML = `<a href="https://${rowWebsite}">${rowWebsite}</a>`
 
             const tdCompanyTopic = rowEl.appendChild(document.createElement("td"))
             const companyTopicWrapper = tdCompanyTopic.appendChild(document.createElement('div'))
