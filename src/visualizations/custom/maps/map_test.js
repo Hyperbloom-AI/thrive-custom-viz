@@ -249,6 +249,10 @@ looker.plugins.visualizations.add({
     // Render in response to the data or settings changing
     updateAsync: function (data, element, config, queryResponse, details, done) {
 
+        function throwMessage(locales) {
+            window.parent.parent.postMessage({ message: "crossFilterLocale", value: locales }, "*")
+        }
+
         let visualization = this
 
         const measureName = queryResponse.fields.measures[0].name;
@@ -311,6 +315,8 @@ looker.plugins.visualizations.add({
                 console.log("DEBUG: GETTING LAYER VISIBILITY")
                 const visibility = map.getLayoutProperty("states-join",'visibility');
                 console.log(visibility)
+
+                console.log(map.getStyle().layers)
             }
         }
 
@@ -399,11 +405,17 @@ looker.plugins.visualizations.add({
 
                     if(e.features[0].state.requestedKPI) {
                         popup.setLngLat(realCoords).setHTML(description).addTo(map);
+                        console.log("moving popup")
                     } else {
-                        popup.remove
+                        console.log("removing popup")
+                        popup.remove;
+                        return;
                     }
 
                     if (hoveredStateId !== null) {
+                        console.log("hoveredStateId does not equal null")
+                        console.log("hoveredStateId does equal: ")
+                        console.log(hoveredStateId)
                         map.setFeatureState(
                             { source: 'statesData', id: hoveredStateId, sourceLayer: 'boundaries_admin_1' }, 
                             { hover: false }
@@ -451,6 +463,9 @@ looker.plugins.visualizations.add({
                     return;
                 }
 
+                console.log("selectedFeatures")
+                console.log(selectedFeatures)
+
                 filteredStateNames.push(selectedFeatureName)
                 runSelectionUpdate(localesWrapper);
             });
@@ -478,6 +493,8 @@ looker.plugins.visualizations.add({
             }
 
             async function runSelectionUpdate(element) {
+                console.log("LOOJUP DATA")
+                console.log(lookupData)
                 const prevParent = document.getElementById("selectedLocaleContainer");
                 if(prevParent) {
                     element.removeChild(prevParent)
@@ -520,14 +537,13 @@ looker.plugins.visualizations.add({
                 console.log("Values:")
                 console.log(filteredStateNames.join(","))
 
-                const response = await visualization.trigger("filter", [{
+                /*const response = await visualization.trigger("filter", [{
                     field: "dim_zi_company_entities.zi_c_hq_state", // the name of the field to filter
                     value: filteredStateNames.join(","), // the "advanced syntax" for the filter
                     run: true, // whether to re-run the query with the new filter
-                }]);
+                }]);*/
 
-                console.log("RESPONSE")
-                console.log(response)
+                throwMessage(filteredStateNames)
                 
                 element.appendChild(parent)
             };
