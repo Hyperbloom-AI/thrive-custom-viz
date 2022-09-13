@@ -235,6 +235,19 @@ looker.plugins.visualizations.add({
 
         element.appendChild(this.__mapBox);
 
+        mapboxgl.accessToken = 'pk.eyJ1IjoiZHVuY2FuY2ZyYXNlciIsImEiOiJjbDRvbDlmZWQwMGdzM2ZxazZybTVkdDQ0In0.xL5_LBkos5tYRbLxR0tQRQ';
+        this.__map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/light-v10',
+            center: [-98.5795, 39.8283],
+            zoom: 4,
+            projection: 'globe'
+        });
+
+        this.__map.addControl(new mapboxgl.NavigationControl());
+        this.__map.addControl(new mapboxgl.FullscreenControl());
+
+
         var link = document.createElement('link');
         link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.css';
         link.rel = 'stylesheet';
@@ -253,32 +266,20 @@ looker.plugins.visualizations.add({
             window.parent.parent.postMessage({ message: "crossFilterLocale", value: locales }, "*")
         }
 
-        let visualization = this
+        let mapgl = this.__map
 
         const measureName = queryResponse.fields.measures[0].name;
         const measureLabel = queryResponse.fields.measures[0].label_short;
         const localesWrapper = this.__selectedLocalesWrapper
 
-        mapboxgl.accessToken = 'pk.eyJ1IjoiZHVuY2FuY2ZyYXNlciIsImEiOiJjbDRvbDlmZWQwMGdzM2ZxazZybTVkdDQ0In0.xL5_LBkos5tYRbLxR0tQRQ';
-        const map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/mapbox/light-v10',
-            center: [-98.5795, 39.8283],
-            zoom: 4,
-            projection: 'globe'
-        });
-
         let hoveredStateId = null; // Tracks hovered state and updates with popup
         let filteredStateNames = [];
 
-        map.addControl(new mapboxgl.NavigationControl());
-        map.addControl(new mapboxgl.FullscreenControl());
-
-        map.on('load', () => {
+        mapgl.on('load', () => {
             createStatesViz();
         });
 
-        map.on('idle', () => {
+        mapgl.on('idle', () => {
             this.__mapStatesButton.addEventListener("click", changeActive);
             this.__mapCBSAsButton.addEventListener("click", changeActive);
             this.__mapZipCodesButton.addEventListener("click", changeActive);
@@ -303,20 +304,20 @@ looker.plugins.visualizations.add({
                 // Updates the layers' active status
                 for (let j = 0; j < this.__LAYERNAMES.length; j++) {
                     if(this.__LAYERNAMES[j] !== e.target.id) {
-                        map.setLayoutProperty(this.__LAYERNAMES[j], 'visibility', 'none');
-                        map.setLayoutProperty("states-join", 'visibility', 'none'); // Does the same as the line above, present for debug.
+                        mapgl.setLayoutProperty(this.__LAYERNAMES[j], 'visibility', 'none');
+                        mapgl.setLayoutProperty("states-join", 'visibility', 'none'); // Does the same as the line above, present for debug.
                     };
                 };
 
                 if(this.__LAYERNAMES.includes(e.target.id)) {
-                    map.setLayoutProperty(e.target.id, 'visibility', 'visible');
+                    mapgl.setLayoutProperty(e.target.id, 'visibility', 'visible');
                 }
 
                 console.log("DEBUG: GETTING LAYER VISIBILITY")
-                const visibility = map.getLayoutProperty("states-join",'visibility');
+                const visibility = mapgl.getLayoutProperty("states-join",'visibility');
                 console.log(visibility)
 
-                console.log(map.getStyle().layers)
+                console.log(mapgl.getStyle().layers)
             }
         }
 
@@ -343,14 +344,14 @@ looker.plugins.visualizations.add({
                 return lookupData;
             }
 
-            map.addSource('statesData', {
+            mapgl.addSource('statesData', {
                 type: 'vector',
                 url: 'mapbox://mapbox.boundaries-adm1-v3'
             });
 
             const maxValue = getMaxState(lookupData)
 
-            map.addLayer({
+            mapgl.addLayer({
                 id: 'states-join',
                 type: 'fill',
                 source: 'statesData',
@@ -377,7 +378,7 @@ looker.plugins.visualizations.add({
             });
 
 
-            map.on('mousemove', 'states-join', (e) => {
+            mapgl.on('mousemove', 'states-join', (e) => {
                 if (e.features.length > 0) {
 
                     const realCoords = [e.lngLat.lng, e.lngLat.lat]
@@ -404,25 +405,20 @@ looker.plugins.visualizations.add({
                     </div>`
 
                     if(e.features[0].state.requestedKPI) {
-                        popup.setLngLat(realCoords).setHTML(description).addTo(map);
-                        console.log("moving popup")
+                        popup.setLngLat(realCoords).setHTML(description).addTo(mapgl);
                     } else {
-                        console.log("removing popup")
                         popup.remove;
                         return;
                     }
 
                     if (hoveredStateId !== null) {
-                        console.log("hoveredStateId does not equal null")
-                        console.log("hoveredStateId does equal: ")
-                        console.log(hoveredStateId)
-                        map.setFeatureState(
+                        mapgl.setFeatureState(
                             { source: 'statesData', id: hoveredStateId, sourceLayer: 'boundaries_admin_1' }, 
                             { hover: false }
                         );
                     }
                     hoveredStateId = e.features[0].id;
-                    map.setFeatureState(
+                    mapgl.setFeatureState(
                         { source: 'statesData', id: hoveredStateId, sourceLayer: 'boundaries_admin_1' },
                         { hover: true }
                     );
@@ -431,9 +427,9 @@ looker.plugins.visualizations.add({
                  
             // When the mouse leaves the state-fill layer, update the feature state of the
             // previously hovered feature.
-            map.on('mouseleave', 'states-join', () => {
+            mapgl.on('mouseleave', 'states-join', () => {
                 if (hoveredStateId !== null) {
-                    map.setFeatureState(
+                    mapgl.setFeatureState(
                         { source: 'statesData', id: hoveredStateId, sourceLayer: 'boundaries_admin_1' },
                         { hover: false }
                     );
@@ -442,14 +438,14 @@ looker.plugins.visualizations.add({
                 hoveredStateId = null;
             });
 
-            map.on('click', (e) => {
+            mapgl.on('click', (e) => {
                 // Set `bbox` as 5px reactangle area around clicked point.
                 const bbox = [
                     [e.point.x, e.point.y],
                     [e.point.x, e.point.y]
                 ];
 
-                const selectedFeatures = map.queryRenderedFeatures(bbox, {
+                const selectedFeatures = mapgl.queryRenderedFeatures(bbox, {
                     layers: ['states-join']
                 });
 
@@ -463,9 +459,6 @@ looker.plugins.visualizations.add({
                     return;
                 }
 
-                console.log("selectedFeatures")
-                console.log(selectedFeatures)
-
                 filteredStateNames.push(selectedFeatureName)
                 runSelectionUpdate(localesWrapper);
             });
@@ -476,7 +469,7 @@ looker.plugins.visualizations.add({
                     if(!lookupData.hasOwnProperty(row["dim_zi_company_entities.zi_c_hq_state"].value)) {
                         continue;
                     }
-                    map.setFeatureState(
+                    mapgl.setFeatureState(
                         {
                             source: "statesData",
                             sourceLayer: 'boundaries_admin_1',
@@ -493,7 +486,7 @@ looker.plugins.visualizations.add({
             }
 
             async function runSelectionUpdate(element) {
-                console.log("LOOJUP DATA")
+                console.log("LOOKUP DATA")
                 console.log(lookupData)
                 const prevParent = document.getElementById("selectedLocaleContainer");
                 if(prevParent) {
@@ -530,12 +523,6 @@ looker.plugins.visualizations.add({
                     selectedLocale.appendChild(removeButton)
                     parent.appendChild(selectedLocale)
                 }
-
-                console.log("ABOUT TO TRIGGER FILTER")
-                console.log(visualization)
-
-                console.log("Values:")
-                console.log(filteredStateNames.join(","))
 
                 /*const response = await visualization.trigger("filter", [{
                     field: "dim_zi_company_entities.zi_c_hq_state", // the name of the field to filter
@@ -591,14 +578,14 @@ looker.plugins.visualizations.add({
             function setAfterLoad(event) {
                 if (event.sourceID !== 'statesData' && !event.isSourceLoaded) return;
                 setStates();
-                map.off('sourcedata', setAfterLoad);
+                mapgl.off('sourcedata', setAfterLoad);
             }
     
             // If `statesData` source is loaded, call `setStates()`.
-            if (map.isSourceLoaded('statesData')) {
+            if (mapgl.isSourceLoaded('statesData')) {
                 setStates();
             } else {
-                map.on('sourcedata', setAfterLoad);
+                mapgl.on('sourcedata', setAfterLoad);
             }
         }
 
@@ -619,14 +606,14 @@ looker.plugins.visualizations.add({
                 return lookupData;
             }
 
-            map.addSource('cbsaData', {
+            mapgl.addSource('cbsaData', {
                 type: 'vector',
                 url: 'mapbox://mapbox.boundaries-sta1-v3'
             });
 
             const maxValue = getMax(lookupData)
 
-            map.addLayer({
+            mapgl.addLayer({
                 id: 'cbsas-join',
                 type: 'fill',
                 source: 'cbsaData',
@@ -653,7 +640,7 @@ looker.plugins.visualizations.add({
             });
 
 
-            map.on('mousemove', 'cbsas-join', (e) => {
+            mapgl.on('mousemove', 'cbsas-join', (e) => {
                 if (e.features.length > 0) {
 
                     const realCoords = [e.lngLat.lng, e.lngLat.lat]
@@ -680,19 +667,19 @@ looker.plugins.visualizations.add({
                     </div>`
 
                     if(e.features[0].state.requestedKPI) {
-                        popup.setLngLat(realCoords).setHTML(description).addTo(map);
+                        popup.setLngLat(realCoords).setHTML(description).addTo(mapgl);
                     } else {
                         popup.remove
                     }
 
                     if (hoveredStateId !== null) {
-                        map.setFeatureState(
+                        mapgl.setFeatureState(
                             { source: 'cbsaData', id: hoveredStateId, sourceLayer: 'boundaries_stats_1' }, 
                             { hover: false }
                         );
                     }
                     hoveredStateId = e.features[0].id;
-                    map.setFeatureState(
+                    mapgl.setFeatureState(
                         { source: 'cbsaData', id: hoveredStateId, sourceLayer: 'boundaries_stats_1' },
                         { hover: true }
                     );
@@ -701,9 +688,9 @@ looker.plugins.visualizations.add({
                  
             // When the mouse leaves the state-fill layer, update the feature state of the
             // previously hovered feature.
-            map.on('mouseleave', 'cbsas-join', () => {
+            mapgl.on('mouseleave', 'cbsas-join', () => {
                 if (hoveredStateId !== null) {
-                    map.setFeatureState(
+                    mapgl.setFeatureState(
                         { source: 'cbsaData', id: hoveredStateId, sourceLayer: 'boundaries_stats_1' },
                         { hover: false }
                     );
@@ -712,14 +699,14 @@ looker.plugins.visualizations.add({
                 hoveredStateId = null;
             });
 
-            map.on('click', (e) => {
+            mapgl.on('click', (e) => {
                 // Set `bbox` as 5px reactangle area around clicked point.
                 const bbox = [
                     [e.point.x, e.point.y],
                     [e.point.x, e.point.y]
                 ];
 
-                const selectedFeatures = map.queryRenderedFeatures(bbox, {
+                const selectedFeatures = mapgl.queryRenderedFeatures(bbox, {
                     layers: ['cbsas-join']
                 });
 
@@ -733,7 +720,7 @@ looker.plugins.visualizations.add({
                     return;
                 }
 
-                //map.setFilter('states-join', ['in', 'id', ...id]);
+                //mapgl.setFilter('states-join', ['in', 'id', ...id]);
 
                 filteredStateNames.push(selectedFeatureName)
             });
@@ -744,7 +731,7 @@ looker.plugins.visualizations.add({
                     if(!lookupData.hasOwnProperty(row["dim_zi_company_entities.zi_c_hq_state"].value)) {
                         continue;
                     }
-                    map.setFeatureState(
+                    mapgl.setFeatureState(
                         {
                             source: "cbsaData",
                             sourceLayer: 'boundaries_stats_1',
@@ -802,19 +789,19 @@ looker.plugins.visualizations.add({
             function setAfterLoad(event) {
                 if (event.sourceID !== 'cbsaData' && !event.isSourceLoaded) return;
                 setStates();
-                map.off('sourcedata', setAfterLoad);
+                mapgl.off('sourcedata', setAfterLoad);
             }
     
             // If `statesData` source is loaded, call `setStates()`.
-            if (map.isSourceLoaded('statesData')) {
+            if (mapgl.isSourceLoaded('statesData')) {
                 setStates();
             } else {
-                map.on('sourcedata', setAfterLoad);
+                mapgl.on('sourcedata', setAfterLoad);
             }
         }
 
-        map.on('style.load', () => {
-            map.setFog({
+        mapgl.on('style.load', () => {
+            mapgl.setFog({
                 color: 'rgb(186, 210, 235)', // Lower atmosphere
                 'high-color': 'rgb(36, 92, 223)', // Upper atmosphere
                 'horizon-blend': 0.02, // Atmosphere thickness (default 0.2 at low zooms)
