@@ -466,6 +466,629 @@ looker.plugins.visualizations.add({
             return arr.every(row => row[prop].value === null);
         }
 
+        function createMainViz() {
+            console.log("Creating visualization")
+
+            // Filter the data for the different groupings
+            const stateLookupData = filterStateLookupTable();
+            const cbsaLookupData = filterCBSALookupTable();
+            const zipLookupData = filterZipLookupTable();
+
+            // Get the max value for each of the different groupings
+            const maxStateValue = getMaxState(stateLookupData)
+            const maxCBSAValue = getMaxCBSA(cbsaLookupData)
+            const maxZipValue = getMaxZip(zipLookupData)
+
+            function filterStateLookupTable() {
+                const lookupData = {};
+    
+                const searchData = stateData.adm1.data.all
+    
+                Object.keys(searchData).forEach(function(key) {
+                    const featureData = searchData[key]
+                    if(featureData.iso_3166_1 === 'US') {
+                        lookupData[featureData['name']] = featureData
+                    }
+                })
+                return lookupData;
+            }
+
+            function filterCBSALookupTable() {
+                const lookupData = {};
+    
+                const searchData = cbsaData.sta2.data.all
+    
+                Object.keys(searchData).forEach(function(key) {
+                    const featureData = searchData[key]
+                    if(featureData.iso_3166_1 === 'US') {
+                        lookupData[featureData['name'].replace(",", "")] = featureData
+                    }
+                })
+                return lookupData;
+            }
+
+            function filterZipLookupTable() {
+                const lookupData = {};
+    
+                const searchData = zipData.pos4.data.all
+    
+                Object.keys(searchData).forEach(function(key) {
+                    const featureData = searchData[key]
+                    if(featureData.iso_3166_1 === 'US') {
+                        lookupData[featureData['unit_code']] = featureData
+                    }
+                })
+                return lookupData;
+            }
+
+            mapgl.addLayer({
+                id: 'states-join',
+                type: 'fill',
+                source: 'statesData',
+                'layout': {
+                    // Make the layer visible by default.
+                    'visibility': 'visible'
+                },
+                'source-layer': 'boundaries_admin_1',
+                paint: {
+                    'fill-color': [
+                        // In the case that 'feature-state': 'requestedKPI' is not null, interpolate the colors between the min and max, if it is null make the layer white.
+                        'case',
+                        ['!=', ['feature-state', 'requestedKPI'], null], ['interpolate', ['linear'], ['feature-state', 'requestedKPI'], 1, 'rgba(255,237,234,0.6)', maxStateValue, 'rgba(179,18,31,0.6)'],
+                        'rgba(255, 255, 255, 0)'
+                    ]
+                }
+            }, 'waterway-label');
+
+            mapgl.addLayer({
+                id: 'cbsas-join',
+                type: 'fill',
+                source: 'cbsaData',
+                'layout': {
+                    // Make the layer visible by default.
+                    'visibility': 'visible'
+                },
+                'source-layer': 'boundaries_stats_2',
+                paint: {
+                    'fill-color': [
+                        // In the case that 'feature-state': 'requestedKPI' is not null, interpolate the colors between the min and max, if it is null make the layer white.
+                        'case',
+                        ['!=', ['feature-state', 'requestedKPI'], null], ['interpolate', ['linear'], ['feature-state', 'requestedKPI'], 1, 'rgba(255,237,234,0.6)', maxCBSAValue, 'rgba(179,18,31,0.6)'],
+                        'rgba(255, 255, 255, 0)'
+                    ]
+                }
+            }, 'waterway-label');
+
+            mapgl.addLayer({
+                id: 'zips-join',
+                type: 'fill',
+                source: 'zipData',
+                'layout': {
+                    // Make the layer visible by default.
+                    'visibility': 'visible'
+                },
+                'source-layer': 'boundaries_postal_4',
+                paint: {
+                    'fill-color': [
+                        // In the case that 'feature-state': 'requestedKPI' is not null, interpolate the colors between the min and max, if it is null make the layer white.
+                        'case',
+                        ['!=', ['feature-state', 'requestedKPI'], null], ['interpolate', ['linear'], ['feature-state', 'requestedKPI'], 1, 'rgba(255,237,234,0.6)', maxZipValue, 'rgba(179,18,31,0.6)'],
+                        'rgba(255, 255, 255, 0)'
+                    ]
+                }
+            }, 'waterway-label');
+
+            const popup = new mapboxgl.Popup({
+                closeButton: false,
+                closeOnClick: false,
+                className: 'gtm-map-popup',
+                maxWidth: '300px'
+            });
+
+            const statePopup = new mapboxgl.Popup({
+                closeButton: false,
+                closeOnClick: false,
+                className: 'gtm-map-popup',
+                maxWidth: '300px'
+            });
+
+            const cbsaPopup = new mapboxgl.Popup({
+                closeButton: false,
+                closeOnClick: false,
+                className: 'gtm-map-popup',
+                maxWidth: '300px'
+            });
+
+            const zipPopup = new mapboxgl.Popup({
+                closeButton: false,
+                closeOnClick: false,
+                className: 'gtm-map-popup',
+                maxWidth: '300px'
+            });
+
+            mapgl.on('mousemove', 'states-join', (e) => {
+                if (e.features.length > 0) {
+
+                    const realCoords = [e.lngLat.lng, e.lngLat.lat]
+                    const reqKPI = e.features[0].state.requestedKPI;
+                    const state = e.features[0].state.name
+
+                    const description = `
+                    <div class="popup-inner">
+                        <div class="popup-inner__vertical">
+                            <div class="popup-title__wrapper">
+                                <h2 class="popup-title">${state}</h2>
+                            </div>
+                            <div class="popup-inner__horizontal">
+                                <div class="popup-inner__horizontal-inner__vertical">
+                                    <div class="descriptor__wrapper">
+                                        <h4 class="descriptor">${measureLabel}</h4>
+                                    </div>
+                                    <div class="number__wrapper">
+                                        <h4 class="number">${numberWithCommas(reqKPI)}</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`
+
+                    if(e.features[0].state.requestedKPI) {
+                        popup.setLngLat(realCoords).setHTML(description).addTo(mapgl);
+                    } else {
+                        popup.remove;
+                        return;
+                    }
+
+                    if (hoveredStateId !== null) {
+                        mapgl.setFeatureState(
+                            { source: 'statesData', id: hoveredStateId, sourceLayer: 'boundaries_admin_1' }, 
+                            { hover: false }
+                        );
+                    }
+                    hoveredStateId = e.features[0].id;
+                    mapgl.setFeatureState(
+                        { source: 'statesData', id: hoveredStateId, sourceLayer: 'boundaries_admin_1' },
+                        { hover: true }
+                    );
+                }
+            });
+
+            mapgl.on('mousemove', 'cbsas-join', (e) => {
+                if (e.features.length > 0) {
+
+                    const realCoords = [e.lngLat.lng, e.lngLat.lat]
+                    const reqKPI = e.features[0].state.requestedKPI;
+                    const cbsa = e.features[0].state.name
+
+                    const description = `
+                    <div class="popup-inner">
+                        <div class="popup-inner__vertical">
+                            <div class="popup-title__wrapper">
+                                <h2 class="popup-title">${cbsa}</h2>
+                            </div>
+                            <div class="popup-inner__horizontal">
+                                <div class="popup-inner__horizontal-inner__vertical">
+                                    <div class="descriptor__wrapper">
+                                        <h4 class="descriptor">${measureLabel}</h4>
+                                    </div>
+                                    <div class="number__wrapper">
+                                        <h4 class="number">${numberWithCommas(reqKPI)}</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`
+
+                    if(e.features[0].state.requestedKPI) {
+                        popup.setLngLat(realCoords).setHTML(description).addTo(mapgl);
+                    } else {
+                        popup.remove
+                    }
+
+                    if (hoveredStateId !== null) {
+                        mapgl.setFeatureState(
+                            { source: 'cbsaData', id: hoveredStateId, sourceLayer: 'boundaries_stats_2' }, 
+                            { hover: false }
+                        );
+                    }
+                    hoveredStateId = e.features[0].id;
+                    mapgl.setFeatureState(
+                        { source: 'cbsaData', id: hoveredStateId, sourceLayer: 'boundaries_stats_2' },
+                        { hover: true }
+                    );
+                }
+            });
+
+            mapgl.on('mousemove', 'zips-join', (e) => {
+                if (e.features.length > 0) {
+
+                    const realCoords = [e.lngLat.lng, e.lngLat.lat]
+                    const reqKPI = e.features[0].state.requestedKPI;
+                    const zip = e.features[0].state.name
+
+                    const description = `
+                    <div class="popup-inner">
+                        <div class="popup-inner__vertical">
+                            <div class="popup-title__wrapper">
+                                <h2 class="popup-title">${zip}</h2>
+                            </div>
+                            <div class="popup-inner__horizontal">
+                                <div class="popup-inner__horizontal-inner__vertical">
+                                    <div class="descriptor__wrapper">
+                                        <h4 class="descriptor">${measureLabel}</h4>
+                                    </div>
+                                    <div class="number__wrapper">
+                                        <h4 class="number">${numberWithCommas(reqKPI)}</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`
+
+                    if(e.features[0].state.requestedKPI) {
+                        popup.setLngLat(realCoords).setHTML(description).addTo(mapgl);
+                    } else {
+                        popup.remove
+                    }
+
+                    if (hoveredStateId !== null) {
+                        mapgl.setFeatureState(
+                            { source: 'zipData', id: hoveredStateId, sourceLayer: 'boundaries_postal_4' }, 
+                            { hover: false }
+                        );
+                    }
+                    hoveredStateId = e.features[0].id;
+                    mapgl.setFeatureState(
+                        { source: 'zipData', id: hoveredStateId, sourceLayer: 'boundaries_postal_4' },
+                        { hover: true }
+                    );
+                }
+            });
+
+            mapgl.on('mouseleave', 'states-join', () => {
+                if (hoveredStateId !== null) {
+                    mapgl.setFeatureState(
+                        { source: 'statesData', id: hoveredStateId, sourceLayer: 'boundaries_admin_1' },
+                        { hover: false }
+                    );
+                    popup.remove();
+                }
+                hoveredStateId = null;
+            });
+
+            mapgl.on('mouseleave', 'cbsas-join', () => {
+                if (hoveredStateId !== null) {
+                    mapgl.setFeatureState(
+                        { source: 'cbsaData', id: hoveredStateId, sourceLayer: 'boundaries_stats_2' },
+                        { hover: false }
+                    );
+                    popup.remove();
+                }
+                hoveredStateId = null;
+            });
+
+            mapgl.on('mouseleave', 'zips-join', () => {
+                if (hoveredStateId !== null) {
+                    mapgl.setFeatureState(
+                        { source: 'zipData', id: hoveredStateId, sourceLayer: 'boundaries_postal_4' },
+                        { hover: false }
+                    );
+                    popup.remove();
+                }
+                hoveredStateId = null;
+            });
+
+            mapgl.on('click', 'states-join', (e) => {
+                // Set `bbox` as 5px reactangle area around clicked point.
+                const bbox = [
+                    [e.point.x, e.point.y],
+                    [e.point.x, e.point.y]
+                ];
+
+                const selectedFeatures = mapgl.queryRenderedFeatures(bbox, {
+                    layers: ['states-join']
+                });
+
+                const name = selectedFeatures.map(
+                    (feature) => feature.state.name
+                );
+
+                const selectedFeatureName = name[0]
+                console.log("active-layer of names", filteredStateNames[activeLayer])
+
+                if(!stateLookupData.hasOwnProperty(selectedFeatureName) || filteredStateNames[activeLayer].includes(selectedFeatureName)) {
+                    return;
+                }
+
+                filteredStateNames[activeLayer].push(selectedFeatureName)
+                console.dir(filteredStateNames)
+                runSelectionUpdate(localesWrapper);
+            });
+
+            mapgl.on('click', 'cbsas-join', (e) => {
+                // Set `bbox` as 5px reactangle area around clicked point.
+                const bbox = [
+                    [e.point.x, e.point.y],
+                    [e.point.x, e.point.y]
+                ];
+
+                const selectedFeatures = mapgl.queryRenderedFeatures(bbox, {
+                    layers: ['cbsas-join']
+                });
+
+                const name = selectedFeatures.map(
+                    (feature) => feature.state.name
+                );
+
+                const selectedFeatureName = name[0]
+
+                if(!cbsaLookupData.hasOwnProperty(selectedFeatureName)) {
+                    return;
+                }
+
+                //mapgl.setFilter('states-join', ['in', 'id', ...id]);
+
+                filteredStateNames.push(selectedFeatureName)
+                runSelectionUpdate(localesWrapper);
+            });
+
+            mapgl.on('click', (e) => {
+                // Set `bbox` as 5px reactangle area around clicked point.
+                const bbox = [
+                    [e.point.x, e.point.y],
+                    [e.point.x, e.point.y]
+                ];
+
+                const selectedFeatures = mapgl.queryRenderedFeatures(bbox, {
+                    layers: ['zips-join']
+                });
+
+                const name = selectedFeatures.map(
+                    (feature) => feature.state.name
+                );
+
+                const selectedFeatureName = name[0]
+
+                if(!zipLookupData.hasOwnProperty(selectedFeatureName)) {
+                    return;
+                }
+
+                //mapgl.setFilter('states-join', ['in', 'id', ...id]);
+
+                filteredStateNames.push(selectedFeatureName)
+                runSelectionUpdate(localesWrapper);
+            });
+
+            function setStates() {
+                for (let i = 0; i < data.length; i++) {
+                    const row = data[i]
+                    if(!stateLookupData.hasOwnProperty(row["dim_zi_map_vis.state"].value)) {
+                        continue;
+                    }
+                    mapgl.setFeatureState(
+                        {
+                            source: "statesData",
+                            sourceLayer: 'boundaries_admin_1',
+                            id: stateLookupData[row["dim_zi_map_vis.state"].value].feature_id
+                        },
+                        {
+                            requestedKPI: row[measureName].value,
+                            fipsCode: stateLookupData[row["dim_zi_map_vis.state"].value].unit_code,
+                            name: stateLookupData[row["dim_zi_map_vis.state"].value].name,
+                            hovered: false
+                        }
+                    )
+                }
+            }
+
+            function setCBSAs() {
+                for (let i = 0; i < data.length; i++) {
+                    const row = data[i]
+                    if(!cbsaLookupData.hasOwnProperty(row["dim_zi_map_vis.cbsa"].value)) {
+                        continue;
+                    }
+                    mapgl.setFeatureState(
+                        {
+                            source: "cbsaData",
+                            sourceLayer: 'boundaries_stats_2',
+                            id: cbsaLookupData[row["dim_zi_map_vis.cbsa"].value].feature_id
+                        },
+                        {
+                            requestedKPI: row[measureName].value,
+                            name: cbsaLookupData[row["dim_zi_map_vis.cbsa"].value].name,
+                            hovered: false
+                        }
+                    )
+                }
+            }
+
+            function setZips() {
+                for (let i = 0; i < data.length; i++) {
+                    const row = data[i]
+                    if(!zipLookupData.hasOwnProperty(row["dim_zi_map_vis.zip"].value)) {
+                        continue;
+                    }
+                    mapgl.setFeatureState(
+                        {
+                            source: "zipData",
+                            sourceLayer: 'boundaries_postal_4',
+                            id: zipLookupData[row["dim_zi_map_vis.zip"].value].feature_id
+                        },
+                        {
+                            requestedKPI: row[measureName].value,
+                            name: zipLookupData[row["dim_zi_map_vis.zip"].value].unit_code,
+                            hovered: false
+                        }
+                    )
+                }
+            }
+
+            function createStatesLegend() {
+                if(determineNull(data, "dim_zi_map_vis.state")) {
+                    return;
+                }
+
+                try {
+                    const oldLegendBox = document.getElementById("mapboxLegend")
+                    oldLegendBox.parentNode.removeChild(oldLegendBox)
+                } catch {
+                    console.log("Unable to remove old legend because there is no old legend.")
+                }
+
+                const legendBox = document.createElement("div")
+                const legendLeft = document.createElement("div")
+                const legendRight = document.createElement("div")
+                const legendBar = document.createElement("div")
+                const legendRightTop = document.createElement("div")
+                const legendRightBottom = document.createElement("div")
+
+                legendBox.className = "legend-box"
+                legendLeft.className = "legend-left"
+                legendRight.className = "legend-right"
+                legendBar.className = "legend-bar"
+
+                legendRightTop.innerHTML = numberWithCommas(maxStateValue)
+                legendRightBottom.innerHTML = 1
+
+                legendLeft.appendChild(legendBar)
+
+                legendRight.appendChild(legendRightTop)
+                legendRight.appendChild(legendRightBottom)
+
+                legendBox.appendChild(legendLeft)
+                legendBox.appendChild(legendRight)
+
+                legendBox.id = "mapboxLegend"
+
+                element.appendChild(legendBox)
+            }
+
+            function createCBSALegend() {
+                if(determineNull(data, "dim_zi_map_vis.cbsa")) {
+                    return;
+                }
+
+                try {
+                    const oldLegendBox = document.getElementById("mapboxLegend")
+                    oldLegendBox.parentNode.removeChild(oldLegendBox)
+                } catch {
+                    console.log("Unable to remove old legend because there is no old legend.")
+                }
+
+                const legendBox = document.createElement("div")
+                const legendLeft = document.createElement("div")
+                const legendRight = document.createElement("div")
+                const legendBar = document.createElement("div")
+                const legendRightTop = document.createElement("div")
+                const legendRightBottom = document.createElement("div")
+
+                legendBox.className = "legend-box"
+                legendLeft.className = "legend-left"
+                legendRight.className = "legend-right"
+                legendBar.className = "legend-bar"
+
+                legendRightTop.innerHTML = numberWithCommas(maxCBSAValue)
+                legendRightBottom.innerHTML = 1
+
+                legendLeft.appendChild(legendBar)
+
+                legendRight.appendChild(legendRightTop)
+                legendRight.appendChild(legendRightBottom)
+
+                legendBox.appendChild(legendLeft)
+                legendBox.appendChild(legendRight)
+
+                legendBox.id = "mapboxLegend"
+
+                element.appendChild(legendBox)
+            }
+
+            function createZipsLegend() {
+                if(determineNull(data, "dim_zi_map_vis.zip")) {
+                    return;
+                }
+
+                try {
+                    const oldLegendBox = document.getElementById("mapboxLegend")
+                    oldLegendBox.parentNode.removeChild(oldLegendBox)
+                } catch {
+                    console.log("Unable to remove old legend because there is no old legend.")
+                }
+
+                const legendBox = document.createElement("div")
+                const legendLeft = document.createElement("div")
+                const legendRight = document.createElement("div")
+                const legendBar = document.createElement("div")
+                const legendRightTop = document.createElement("div")
+                const legendRightBottom = document.createElement("div")
+
+                legendBox.className = "legend-box"
+                legendLeft.className = "legend-left"
+                legendRight.className = "legend-right"
+                legendBar.className = "legend-bar"
+
+                legendRightTop.innerHTML = numberWithCommas(maxValue)
+                legendRightBottom.innerHTML = 1
+
+                legendLeft.appendChild(legendBar)
+
+                legendRight.appendChild(legendRightTop)
+                legendRight.appendChild(legendRightBottom)
+
+                legendBox.appendChild(legendLeft)
+                legendBox.appendChild(legendRight)
+
+                legendBox.id = "mapboxLegend"
+
+                element.appendChild(legendBox)
+            }
+
+            createStatesLegend()
+            createCBSALegend()
+            createZipsLegend()
+
+            // Check if `statesData` source is loaded.
+            function setAfterLoadStates(event) {
+                if (event.sourceID !== 'statesData' && !event.isSourceLoaded) return;
+                setStates();
+                mapgl.off('sourcedata', setAfterLoadStates);
+            }
+    
+            // If `statesData` source is loaded, call `setStates()`.
+            if (mapgl.isSourceLoaded('statesData')) {
+                setStates();
+            } else {
+                mapgl.on('sourcedata', setAfterLoadStates);
+            }
+
+            // Check if `statesData` source is loaded.
+            function setAfterLoadCBSAs(event) {
+                if (event.sourceID !== 'cbsaData' && !event.isSourceLoaded) return;
+                setCBSAs();
+                mapgl.off('sourcedata', setAfterLoadCBSAs);
+            }
+    
+            // If `statesData` source is loaded, call `setStates()`.
+            if (mapgl.isSourceLoaded('cbsaData')) {
+                setCBSAs();
+            } else {
+                mapgl.on('sourcedata', setAfterLoadCBSAs);
+            }
+
+            function setAfterLoadZips(event) {
+                if (event.sourceID !== 'zipData' && !event.isSourceLoaded) return;
+                setZips();
+                mapgl.off('sourcedata', setAfterLoadZips);
+            }
+    
+            // If `statesData` source is loaded, call `setStates()`.
+            if (mapgl.isSourceLoaded('zipData')) {
+                setZips();
+            } else {
+                mapgl.on('sourcedata', setAfterLoadZips);
+            }
+        }
+
         function createStatesViz() {
             console.log("Creating States Visualization")
             const lookupData = filterLookupTable();
