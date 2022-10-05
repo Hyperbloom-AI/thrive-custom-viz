@@ -22,9 +22,6 @@ looker.plugins.visualizations.add({
     label: "Custom Layered Mapbox Map",
     // Set up the initial state of the visualization
     create: function (element, config) {
-
-        console.time("createRuntime")
-
         // Insert a <style> tag with some styles we'll use later.
         element.innerHTML = `
         <style>
@@ -313,6 +310,8 @@ looker.plugins.visualizations.add({
         const measureLabel = queryResponse.fields.measures[0].label_short;
         // Move HTML DOM element from `this` to permanent variable, returns HTML DOM element
         const localesWrapper = this.__selectedLocalesWrapper
+        // Move Object from `this` to permanent variable, returns Object
+        const thisLayerNames = this.__LAYERNAMES
         // Tracks feature currently being hovered, DEV NOTE: To increase conciseness this could be altered to `hoveredFeatureId`, set to null
         let hoveredStateId = null; // Tracks hovered state and updates with popup
         // The object responsible for capturing selected features, DEV NOTE: To increase conciseness this could be altered to `selectedFeatureNames`, set to object of empty arrays
@@ -371,53 +370,51 @@ looker.plugins.visualizations.add({
                 element.removeChild(prevParent)
             };
 
-            /*const parent = document.getElementById("selectedLocaleContainer");
-            if(parent) {
-                element.removeChild(prevParent)
-            };*/
-
             const parent = document.createElement("div");
             parent.id = "selectedLocaleContainer";
 
             const prevalues = (Object.values(filteredStateNames)).map(element => element)
             const values = [].concat.apply([], prevalues)
+            const count = values.length
 
-            for(let i = 0; i < values.length; i++) {
-                if(!values[i]) {
-                    continue;
-                }
-                if(i > 1 && values.length > 3) {
-                    const moreWrapper = document.createElement("div")
-                    moreWrapper.className = "selected-locale__more"
-                    //moreWrapper.className = "selected-locale__more"
-                    const moreText = document.createElement("span")
-                    moreText.innerHTML = `+${values.length - 2} more locales`;
-                    moreWrapper.appendChild(moreText)
-                    parent.appendChild(moreWrapper)
-                    break;
-                }
-                const selectedLocale = document.createElement("div")
-                const selectedLocaleText = document.createElement("span")
-                const removeButton = document.createElement('div')
-                removeButton.innerHTML = '<i class="fa-solid fa-xmark remove-icon" aria-hidden="true"></i>';
+            const moreWrapper = document.createElement("div")
 
-                removeButton.addEventListener("click", () => {
-                    console.log("filteredStateNames", filteredStateNames)
-                    console.log("filteredStateNames Layer", selectedLayer)
-                    console.log("filteredStateNames Layer Index", filteredStateNames[selectedLayer])
-                    filteredStateNames[selectedLayer].splice(i, 1)
-                    throwMessage(filteredStateNames)
-                    runSelectionUpdate(element, selectedLayer)
-                })
-
-                selectedLocaleText.innerHTML = values[i]
-                selectedLocale.className = "selected-locale"
-
-                selectedLocale.appendChild(selectedLocaleText)
-                selectedLocale.appendChild(removeButton)
-                parent.appendChild(selectedLocale)
+            if(count > 3) {
+                moreWrapper.className = "selected-locale__more"
+                const moreText = document.createElement("span")
+                moreText.innerHTML = `+${count - 2} more locales`;
+                moreWrapper.appendChild(moreText)
             }
-            
+
+            let totalCount = 0
+            Object.keys(filteredStateNames).forEach((layer) => {
+                filteredStateNames[layer].forEach((feature, index) => {
+                    totalCount++;
+                    if(totalCount > 2 && count > 3) {
+                        console.debug("Nothing")
+                    } else {
+                        const selectedLocale = document.createElement("div")
+                        const selectedLocaleText = document.createElement("span")
+                        const removeButton = document.createElement('div')
+                        removeButton.innerHTML = '<i class="fa-solid fa-xmark remove-icon" aria-hidden="true"></i>';
+
+                        removeButton.addEventListener("click", () => {
+                            filteredStateNames[layer].splice(index, 1)
+                            throwMessage(filteredStateNames)
+                            runSelectionUpdate(element, selectedLayer)
+                        })
+
+                        selectedLocaleText.innerHTML = feature
+                        selectedLocale.className = "selected-locale"
+
+                        selectedLocale.appendChild(selectedLocaleText)
+                        selectedLocale.appendChild(removeButton)
+                        parent.appendChild(selectedLocale)
+                    }
+                })
+            })
+
+            parent.appendChild(moreWrapper)
             element.appendChild(parent)
         };
 
@@ -465,6 +462,13 @@ looker.plugins.visualizations.add({
                 if(!e.originalEvent.ctrlKey) {
                     // Send data to GTM Frontend for a looker data refresh, returns null
                     throwMessage(filteredStateNames)
+                    const layers = Object.keys(filteredStateNames)
+                    const nextLayerName = layers[layers.findIndex((element) => element === layerName) + 1]
+                    if(nextLayerName) {
+                        const nextLayerGrouping = thisLayerNames[thisLayerNames.findIndex((element) => {console.log("nln", nextLayerName); console.log("element", element.name); return element.name === nextLayerName})].groupingName
+                        autoChangeActive(nextLayerName)
+                        changeGranularity(nextLayerGrouping)
+                    }
                 }
             }
         }
@@ -480,6 +484,29 @@ looker.plugins.visualizations.add({
             this.__mapCBSAsButton.addEventListener("click", changeActive);
             this.__mapZipCodesButton.addEventListener("click", changeActive);
         })
+
+        const autoChangeActive = (layer) => {
+            /* For reference, e.target is one of the buttons on top of the map. 
+            The event listeners are added in a map.on('idle', () => {}) but have
+            previously been added in map.on('load', () => {}) to the same effect*/
+            const els = document.getElementsByClassName("map-paginator");
+            for (let i = 0; i < els.length; i++) {
+                if(els[i].classList.contains("active")) {
+                    els[i].classList.remove("active");
+                };
+
+                if(els[i].id === layer) els[i].classList.add("active")
+            };
+
+            for (let j = 0; j < this.__LAYERNAMES.length; j++) {
+                if(this.__LAYERNAMES[j].name !== layer) {
+                    mapgl.setLayoutProperty(this.__LAYERNAMES[j].name, 'visibility', 'none');
+                };
+            };
+
+            const filteredDown = this.__LAYERNAMES.filter(item => item.name === layer)
+            if(filteredDown.length > 0) mapgl.setLayoutProperty(layer, 'visibility', 'visible');
+        }
 
         const changeActive = (e) => {
             /* For reference, e.target is one of the buttons on top of the map. 
@@ -657,9 +684,7 @@ looker.plugins.visualizations.add({
                 hoveredStateId = null;
             });
 
-            mapgl.on('click', 'states-join', (e) => {
-                hostClickEvent(e, 'states-join', lookupData, localesWrapper)
-            });
+            mapgl.on('click', 'states-join', (e) => hostClickEvent(e, 'states-join', lookupData, localesWrapper));
 
             function setStates() {
                 for (let i = 0; i < data.length; i++) {
