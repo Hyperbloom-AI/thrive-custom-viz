@@ -276,6 +276,8 @@ looker.plugins.visualizations.add({
 
         document.head.appendChild(link);
         document.head.appendChild(script);
+
+        console.log("Create function complete");
     },
 
     /* Render in response to the data or settings changing
@@ -427,13 +429,8 @@ looker.plugins.visualizations.add({
             if(totalCount === 0) {
                 autoChangeActive("states-join");
                 changeGranularity("State");
-                //mapgl.zoomTo(4, { duration: 1000, offset: [100, 50] });
-                //mapgl.panTo([-98.5795, 39.8283], { duration: 1000 });
-                mapgl.easeTo({
-                    center: [-98.5795, 39.8283],
-                    zoom: 4,
-                    duration: 1000
-                })
+                mapgl.zoomTo(4, { duration: 1000, offset: [100, 50] });
+                mapgl.panTo([-98.5795, 39.8283], { duration: 1000 });
             }
 
             parent.appendChild(moreWrapper);
@@ -487,7 +484,7 @@ looker.plugins.visualizations.add({
                     const layers = Object.keys(filteredStateNames)
                     const nextLayerName = layers[layers.findIndex((element) => element === layerName) + 1]
                     if(nextLayerName) {
-                        const nextLayerGrouping = thisLayerNames[thisLayerNames.findIndex((element) => element.name === nextLayerName)].groupingName
+                        const nextLayerGrouping = thisLayerNames[thisLayerNames.findIndex((element) => {console.log("nln", nextLayerName); console.log("element", element.name); return element.name === nextLayerName})].groupingName
                         autoChangeActive(nextLayerName)
                         changeGranularity(nextLayerGrouping)
                     }
@@ -601,6 +598,7 @@ looker.plugins.visualizations.add({
         }
 
         function createStatesViz() {
+            console.log("CREATING STATES VIZ")
             const lookupData = filterLookupTable();
 
             function filterLookupTable() {
@@ -616,8 +614,11 @@ looker.plugins.visualizations.add({
                 })
                 return lookupData;
             }
+
+            console.log("GETTING MAX STATE")
             const maxValue = getMaxState(lookupData)
 
+            console.log("adding layer")
             mapgl.addLayer({
                 id: 'states-join',
                 type: 'fill',
@@ -637,12 +638,16 @@ looker.plugins.visualizations.add({
                 }
             }, 'waterway-label');
 
+            console.log("CREATING POPUP")
+
             const popup = new mapboxgl.Popup({
                 closeButton: false,
                 closeOnClick: false,
                 className: 'gtm-map-popup',
                 maxWidth: '300px'
             });
+
+            console.log("ADDING EVENT HANDLERS")
 
             mapgl.on('mousemove', 'states-join', (e) => {
                 if (e.features.length > 0) {
@@ -707,6 +712,7 @@ looker.plugins.visualizations.add({
             mapgl.on('click', 'states-join', (e) => hostClickEvent(e, 'states-join', lookupData, localesWrapper));
 
             function setStates() {
+                console.log("SETTING STATES")
                 for (let i = 0; i < data.length; i++) {
                     const row = data[i]
                     if(!lookupData.hasOwnProperty(row["dim_zi_map_vis.state"].value)) {
@@ -747,6 +753,7 @@ looker.plugins.visualizations.add({
 
 
         function createCBSAsViz() {
+            console.log("CREATING CBSA's VIZ")
             const lookupData = filterLookupTable();
 
             function filterLookupTable() {
@@ -894,6 +901,7 @@ looker.plugins.visualizations.add({
         }
 
         function createZipsViz() {
+            console.log("CREATING zip's VIZ")
             const lookupData = filterLookupTable();
 
             function filterLookupTable() {
@@ -1048,37 +1056,25 @@ looker.plugins.visualizations.add({
             }); // Set the default atmosphere style
         });
 
-        function autozoomCBSA() {
+        const autozoomCBSA = () => {
+            console.log("AUTOZOOM CBSA")
             if(mapgl.getSource('cbsaData') && mapgl.isSourceLoaded('cbsaData')) {
                 const fu = mapgl.queryRenderedFeatures({ layers: ['cbsas-join'] })
                 //const fu = mapgl.querySourceFeatures('cbsaData', { sourceLayer: 'boundaries_stats_2' })
                 const f = fu.filter((feature) => feature.state && feature.state.requestedKPI)
                 if (f.length > 0) {
                     var bb = bbox({ type: 'FeatureCollection', features: f });
-                    mapgl.fitBounds(bb, {padding: 50});
+                    mapgl.fitBounds(bb, {padding: 20});
                     mapgl.off("idle", autozoomCBSA)
-                }
-            }
-        }
-
-        function autozoomZip() {
-            if(mapgl.getSource('zipData') && mapgl.isSourceLoaded('zipData')) {
-                const fu = mapgl.queryRenderedFeatures({ layers: ['zips-join'] })
-                //const fu = mapgl.querySourceFeatures('cbsaData', { sourceLayer: 'boundaries_stats_2' })
-                const f = fu.filter((feature) => feature.state && feature.state.requestedKPI)
-                if (f.length > 0) {
-                    var bb = bbox({ type: 'FeatureCollection', features: f });
-                    mapgl.fitBounds(bb, {padding: 50});
-                    mapgl.off("idle", autozoomZip)
                 }
             }
         }
 
         runVisUpdate()
 
-        function runVisUpdate() {
-            mapgl.on("idle", autozoomCBSA)
-            mapgl.on("idle", autozoomZip)
+        const runVisUpdate = () => {
+            //mapgl.on("idle", autozoomCBSA)
+            //mapgl.on("idle", autozoomZip)
 
             const updateStates = () => {
                 const lookupData = filterLookupTable();
@@ -1168,6 +1164,7 @@ looker.plugins.visualizations.add({
             }
 
             const updateZips = () => {
+                console.log("Updating Zips")
                 const lookupData = filterLookupTable();
 
                 function filterLookupTable() {
@@ -1215,10 +1212,12 @@ looker.plugins.visualizations.add({
                 );
             }
 
-            if(mapgl.getSource('statesData') && mapgl.isSourceLoaded('statesData')) updateStates();
-            if(mapgl.getSource('cbsaData') && mapgl.isSourceLoaded('cbsaData')) updateCBSAs();
-            if(mapgl.getSource('zipData') && mapgl.isSourceLoaded('zipData')) updateZips();
+            //if(mapgl.getSource('statesData') && mapgl.isSourceLoaded('statesData')) updateStates();
+            //if(mapgl.getSource('cbsaData') && mapgl.isSourceLoaded('cbsaData')) updateCBSAs();
+            //if(mapgl.getSource('zipData') && mapgl.isSourceLoaded('zipData')) updateZips();
         }
+
+        console.log("Update Async complete")
         done()
     }
 });
