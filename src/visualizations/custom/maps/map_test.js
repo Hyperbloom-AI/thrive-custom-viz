@@ -231,9 +231,7 @@ looker.plugins.visualizations.add({
                 border-radius: 15px;
                 display: none;
                 flex-direction: column;
-                padding: 10px 6px 10px 0
-                padding-right: 6px;
-                padding-top: 10px;
+                padding: 10px 6px 10px 0;
             }
 
             .selected-locale__more-box__wrapper.active {
@@ -244,7 +242,7 @@ looker.plugins.visualizations.add({
                 flex-flow: row wrap;
                 overflow-y: scroll;
                 display: flex;
-                padding: 10px 0 0 20px;
+                padding: 10px 15px 0 20px;
             }
 
             .selected-locale__more-box > div {
