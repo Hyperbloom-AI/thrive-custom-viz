@@ -154,6 +154,30 @@ looker.plugins.visualizations.add({
                 border-radius: 30px;
                 display: flex;
                 align-items: center;
+                -moz-user-select: none;
+                -khtml-user-select: none;
+                -webkit-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+                max-height: 46px;
+                width: fit-content;
+            }
+
+            .selected-locale__hidden {
+                background-color: black;
+                color: white;
+                font: 14px/20px 'Roboto', sans-serif;
+                padding: 12px 20px;
+                border-radius: 30px;
+                display: flex;
+                align-items: center;
+                -moz-user-select: none;
+                -khtml-user-select: none;
+                -webkit-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+                max-height: 46px;
+                width: fit-content;
             }
 
             .selected-locale__more {
@@ -163,6 +187,15 @@ looker.plugins.visualizations.add({
                 padding: 12px;
                 font: 14px/20px 'Roboto', sans-serif;
                 border-radius: 30px;
+                min-width: 100px;
+                text-align: center;
+                -moz-user-select: none;
+                -khtml-user-select: none;
+                -webkit-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+                cursor: pointer;
+                max-height: 46px;
             }
 
             #selectedLocaleContainer {
@@ -174,13 +207,62 @@ looker.plugins.visualizations.add({
                 margin-right: 5px;
             }
 
+            .selected-locale__hidden:not(:last-child) {
+                margin-right: 5px;
+            }
+
             .remove-icon {
                 margin-left: 25px;
                 cursor: pointer;
             }
 
-            .selected-locale > div {
+            .selected-locale > div, .selected-locale__hidden > div {
                 display: flex;
+            }
+
+            .selected-locale__more-box__wrapper {
+                position: absolute;
+                bottom: 55px;
+                right: 0;
+                max-height: 400px;
+                width: 400px;
+                background-color: #E8E7E7;
+                border: 1px solid black;
+                border-radius: 15px;
+                display: none;
+                flex-direction: column;
+                padding: 10px 6px 10px 0
+                padding-right: 6px;
+                padding-top: 10px;
+            }
+
+            .selected-locale__more-box__wrapper.active {
+                display: flex;
+            }
+
+            .selected-locale__more-box {
+                flex-flow: row wrap;
+                overflow-y: scroll;
+                display: flex;
+                padding: 10px 0 0 20px;
+            }
+
+            .selected-locale__more-box > div {
+                margin-bottom: 10px;
+            }
+
+            ::-webkit-scrollbar-track {
+                background: #00000000;
+            }
+
+            ::-webkit-scrollbar {
+                width: 7px;
+            }
+
+            ::-webkit-scrollbar-thumb {
+                width: 7px;
+                border-radius: 17px;
+                background-color: #919191;
             }
         </style>`;
 
@@ -367,7 +449,7 @@ looker.plugins.visualizations.add({
             element.appendChild(legendBox);
         }
 
-         /* Runs an update function when a user removes or adds a feature to the selection list.
+        /* Runs an update function when a user removes or adds a feature to the selection list.
         Params:
             @param element: The element that holds the feature pucks.
             @param selectedLayer: The layer where the click originated or where the feature should be removed from.
@@ -375,8 +457,12 @@ looker.plugins.visualizations.add({
         async function runSelectionUpdate(element, selectedLayer) {
             // Holds the DOM element that is the lowest single parent, returns HTML DOM Element.
             const prevParent = document.getElementById("selectedLocaleContainer");
+
+            const oldMoreBox = document.getElementById("moreBoxWrapper")
             // If the lowest parent element exists, delete it so it can be replaced.
             if(prevParent) element.removeChild(prevParent);
+
+            if(oldMoreBox) element.removeChild(oldMoreBox)
             // Create a new div to replace the last and give it an id for deletion later.
             const parent = document.createElement("div");
             parent.id = "selectedLocaleContainer";
@@ -387,56 +473,80 @@ looker.plugins.visualizations.add({
             // Create a "See More" puck which users can click to display the hidden selected features.
             const moreWrapper = document.createElement("div");
             // When the total number of objects is greater than 3, simply change the text of the puck to display the number of hidden features
+            const moreBoxWrapper = document.createElement("div");
+            const moreBox = document.createElement("div");
+            moreBox.className = "selected-locale__more-box";
+            moreBox.id = "moreBox";
+            moreBoxWrapper.appendChild(moreBox);
+            moreBoxWrapper.id = "moreBoxWrapper";
+            moreBoxWrapper.className = "selected-locale__more-box__wrapper";
+            element.appendChild(moreBoxWrapper);
+
             if(count > 3) {
                 moreWrapper.className = "selected-locale__more";
                 const moreText = document.createElement("span");
                 moreText.innerHTML = `+${count - 2} more locales`;
                 moreWrapper.appendChild(moreText);
             };
-
             // Total Count will keep a live count of number of features, returns Integer
             let totalCount = 0;
+            // Rotate through each layer using Object.keys to get the layer names
             Object.keys(filteredStateNames).forEach((layer) => {
+                // Rotate Through each selected value on a given layer, also keep the index to determine from which position to splice on removal.
                 filteredStateNames[layer].forEach((feature, index) => {
+                    // Increment total count to keep track of which elements should be hidden
                     totalCount++;
+                    // Create each element in order to make a puck. In the else statement the pucks are not hidden.
+                    const selectedLocale = document.createElement("div");
+                    const selectedLocaleText = document.createElement("span");
+                    const removeButton = document.createElement('div');
+                    removeButton.innerHTML = '<i class="fa-solid fa-xmark remove-icon" aria-hidden="true"></i>';
+                    // Add an event listener that will remove a value from the list when the `x` is clicked
+                    removeButton.addEventListener("click", () => {
+                        // Remove a single element at the index supplied
+                        filteredStateNames[layer].splice(index, 1);
+                        // Update the selected locales on the GTM Dashboard
+                        throwMessage(filteredStateNames);
+                        // Rerun this function so that the pucks show the item is removed
+                        runSelectionUpdate(element, selectedLayer);
+                    })
+                    // Finish creating the puck and append it to the parent element.
+                    selectedLocaleText.innerHTML = feature;
+                    selectedLocale.appendChild(selectedLocaleText);
+                    selectedLocale.appendChild(removeButton);
+
                     if(totalCount > 2 && count > 3) {
-                        // Here is where we'll create new hidden pucks and append them to a hidden box, for now do nothing
-                        console.debug("Nothing");
+                        selectedLocale.className = "selected-locale__hidden";
+                        moreBox.appendChild(selectedLocale)
                     } else {
-                        const selectedLocale = document.createElement("div");
-                        const selectedLocaleText = document.createElement("span");
-                        const removeButton = document.createElement('div');
-                        removeButton.innerHTML = '<i class="fa-solid fa-xmark remove-icon" aria-hidden="true"></i>';
-
-                        removeButton.addEventListener("click", () => {
-                            filteredStateNames[layer].splice(index, 1);
-                            throwMessage(filteredStateNames);
-                            runSelectionUpdate(element, selectedLayer);
-                        })
-
-                        selectedLocaleText.innerHTML = feature;
                         selectedLocale.className = "selected-locale";
-
-                        selectedLocale.appendChild(selectedLocaleText);
-                        selectedLocale.appendChild(removeButton);
                         parent.appendChild(selectedLocale);
                     }
                 })
             })
-
+            // When the total number of features is empty, revert to the states dashboard, zoom back to center and reset zoom.
             if(totalCount === 0) {
                 autoChangeActive("states-join");
                 changeGranularity("State");
-                //mapgl.zoomTo(4, { duration: 1000, offset: [100, 50] });
-                //mapgl.panTo([-98.5795, 39.8283], { duration: 1000 });
-                mapgl.easeTo({
-                    center: [-98.5795, 39.8283],
-                    zoom: 4,
-                    duration: 1000
-                })
+                mapgl.easeTo({ center: [-98.5795, 39.8283], zoom: 4, duration: 1000 })
             }
-
+            moreWrapper.addEventListener("click", function() {
+                if(moreWrapper.classList.contains("active")) {
+                    runSelectionUpdate(element, selectedLayer)
+                } else {
+                    moreWrapper.classList.toggle("active")
+                    moreWrapper.innerHTML = "Close"
+                    const elements = document.querySelectorAll(".selected-locale");
+                    const mbw = document.getElementById("moreBoxWrapper")
+                    const mb = document.getElementById("moreBox")
+                    //elements.forEach((puck) => puck.remove())
+                    elements.forEach((puck) => mb.appendChild(puck))
+                    mbw.classList.toggle("active")
+                }
+            })
+            // Add the hidden puck to the selected features
             parent.appendChild(moreWrapper);
+            // Append the whole selected locale box to the visualization
             element.appendChild(parent);
         };
 
@@ -456,74 +566,69 @@ looker.plugins.visualizations.add({
             const names = selectedFeatures.map((feature) => feature.state.name);
             // Line below gets the first name (name of closest feature to bbox), returns string or undefined
             var selectedFeatureName = names[0];
-
             // When selectedFeatureName is undefined, does not execute
             if(selectedFeatureName) {
                 // If optional parameter `replaceCommas` is true, attempts to replace commas, upon failing executes console.warn
-                if(replaceCommas) {
-                    try {
-                        // Replace Commas (particularly in CBSAs for comparison), returns string [no undefined]
-                        selectedFeatureName = selectedFeatureName.replace(",", "")
-                    } catch (error) {
-                        // Warns when replace fails, NOTE: may be able to remove
-                        console.warn("Could not replace null selection: " + selectedFeatureName)
-                    }
-                }
-    
+                if(replaceCommas && selectedFeatureName) selectedFeatureName = selectedFeatureName.replace(",", "")
                 /* When the selectedFeatureName is not a property of lookupData or the 
                 selectedFeatureName is already included in `filteredStateNames[layerName]` then early return */
                 if(!lookupData.hasOwnProperty(selectedFeatureName) || filteredStateNames[layerName].includes(selectedFeatureName)) return;
-    
                 /* Push the selectedFeatureName into the proper category of `filteredStateNames[layerName]`, 
                 inline and returns {layerNameA: [featureA, featureB, etc...], layerNameB: [featureA, featureB, etc...]} , etc... */
                 filteredStateNames[layerName].push(selectedFeatureName)
                 // Updates the pucks that show feature selection bottom-right of the map, returns null
                 runSelectionUpdate(localesWrapper, layerName);
-    
                 // If the ctrl key is not selected, send data for filter update
                 if(!e.originalEvent.ctrlKey) {
                     // Send data to GTM Frontend for a looker data refresh, returns null
                     throwMessage(filteredStateNames)
+                    // Get layer names from filteredStateNames with Object.keys(), Returns array: ["layerX", "layerY", "layerZ"]
                     const layers = Object.keys(filteredStateNames)
+                    // Check what the next layer in the list is after the layer currently in use, returns String or undefined
                     const nextLayerName = layers[layers.findIndex((element) => element === layerName) + 1]
+                    // If nextLayerName is not undefined get the grouping name and change granularity to next lowest setting
                     if(nextLayerName) {
+                        // Get the grouping name of the next layer, returns String no undefined
                         const nextLayerGrouping = thisLayerNames[thisLayerNames.findIndex((element) => element.name === nextLayerName)].groupingName
+                        // Automatically change the active layer to the specific layer supplied
                         autoChangeActive(nextLayerName)
+                        // Update the selected grouping in the GTM Frontend to swap granularities
                         changeGranularity(nextLayerGrouping)
                     }
                 }
             }
         }
 
+        // When the map loads, create each initial visualization regardless of the existence of data
         mapgl.on('load', () => {
             createStatesViz();
             createCBSAsViz();
             createZipsViz();
         });
 
+        // When the map goes idle, attach an event listener to the granularity buttons to change to that granularity
         mapgl.on('idle', () => {
             this.__mapStatesButton.addEventListener("click", changeActive);
             this.__mapCBSAsButton.addEventListener("click", changeActive);
             this.__mapZipCodesButton.addEventListener("click", changeActive);
         })
 
+        /* As Compared to the next function, this function automatically changes which layer is active rather than determining
+        What was clicked.
+        Params:
+            @param layer: The name of the layer that the visualization will swap to.
+        */
         const autoChangeActive = (layer) => {
-            /* For reference, e.target is one of the buttons on top of the map. 
-            The event listeners are added in a map.on('idle', () => {}) but have
-            previously been added in map.on('load', () => {}) to the same effect*/
+            // Get all elements with the given class, this will return a collection of DOM elements that are the buttons
             const els = document.getElementsByClassName("map-paginator");
+            // Loop through the 
             for (let i = 0; i < els.length; i++) {
-                if(els[i].classList.contains("active")) {
-                    els[i].classList.remove("active");
-                };
-
+                if(els[i].classList.contains("active")) els[i].classList.remove("active");
                 if(els[i].id === layer) els[i].classList.add("active")
             };
 
             for (let j = 0; j < this.__LAYERNAMES.length; j++) {
-                if(this.__LAYERNAMES[j].name !== layer) {
-                    mapgl.setLayoutProperty(this.__LAYERNAMES[j].name, 'visibility', 'none');
-                };
+                if(this.__LAYERNAMES[j].name !== layer) mapgl.setLayoutProperty(this.__LAYERNAMES[j].name, 'visibility', 'none');
             };
 
             const filteredDown = this.__LAYERNAMES.filter(item => item.name === layer)
@@ -531,13 +636,6 @@ looker.plugins.visualizations.add({
         }
 
         const changeActive = (e) => {
-            /* For reference, e.target is one of the buttons on top of the map. 
-            The event listeners are added in a map.on('idle', () => {}) but have
-            previously been added in map.on('load', () => {}) to the same effect*/
-
-            //e.preventDefault();
-            //e.stopPropagation();
-
             if(!e.target.classList.contains("active")) {
                 // Updates the nav-bar active status
                 const els = document.getElementsByClassName("map-paginator");
@@ -551,9 +649,7 @@ looker.plugins.visualizations.add({
 
                 // Updates the layers' active status
                 for (let j = 0; j < this.__LAYERNAMES.length; j++) {
-                    if(this.__LAYERNAMES[j].name !== e.target.id) {
-                        mapgl.setLayoutProperty(this.__LAYERNAMES[j].name, 'visibility', 'none');
-                    };
+                    if(this.__LAYERNAMES[j].name !== e.target.id)mapgl.setLayoutProperty(this.__LAYERNAMES[j].name, 'visibility', 'none');
                 };
 
                 const filteredDown = this.__LAYERNAMES.filter(item => item.name === e.target.id)
