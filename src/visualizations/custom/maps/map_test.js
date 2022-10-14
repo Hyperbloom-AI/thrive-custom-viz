@@ -196,7 +196,7 @@ looker.plugins.visualizations.add({
                 right: 0;
                 max-height: 400px;
                 width: 400px;
-                background-color: #E8E7E7;
+                background-color: #e8e7e782;
                 border: 1px solid black;
                 border-radius: 15px;
                 display: none;
@@ -296,7 +296,8 @@ looker.plugins.visualizations.add({
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                cursor: pointer
+                cursor: pointer;
+                opacity: 0.8
             }
         </style>`;
 
@@ -505,7 +506,7 @@ looker.plugins.visualizations.add({
             tooltipTop.className = "ctrl-tooltip__top"
             tooltipBottom.className = "ctrl-tooltip__bottom"
             tooltipTitle.innerHTML = "Keyboard Shortcut"
-            tooltipDescription.innerHTML = "Press and hold the Ctrl key while clicking on subsequent locations to select multiple features, before selecting the last feature of your preffered subset, release the Ctrl key."
+            tooltipDescription.innerHTML = "Press and hold the Ctrl key (or Cmd key on Mac) while clicking on subsequent locations to select multiple features, before selecting the last feature of your preffered subset, release the Ctrl or Cmd key."
             tooltipButton.innerHTML = "Got It"
             tooltipButton.addEventListener("click", showHideMultiTooltip)
             tooltipOpener.className = "tooltip-opener"
