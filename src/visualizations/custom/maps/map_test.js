@@ -268,7 +268,8 @@ looker.plugins.visualizations.add({
                 left: 50%;
                 transform: translate(-50%, -50%);
                 padding: 24px;
-                height: 240px;
+                max-height: 320px;
+                height: fit-content;
                 background-color: #E8E7E7;
                 border-radius: 12px;
                 font-family: 'Roboto', sans-serif;
