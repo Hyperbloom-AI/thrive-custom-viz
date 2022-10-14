@@ -25,11 +25,9 @@ looker.plugins.visualizations.add({
         element.innerHTML = `
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
-
             * {
               box-sizing: border-box;
             }
-
             html, body, #vis {
               height: 100%;
               margin: 0;
@@ -38,19 +36,16 @@ looker.plugins.visualizations.add({
               display: flex;
               flex-flow: column;
             }
-
             #vis {
               height: 100%;
               width: 100%;
               margin: 0
             }
-
             .map-paginator__wrapper {
                 margin-top: 10px;
                 margin-bottom: 10px;
                 padding: 0px 10px;
             }
-
             .map-paginator {
                 color: #A1A1A1;
                 font-family: 'Roboto', serif;
@@ -62,13 +57,11 @@ looker.plugins.visualizations.add({
                 cursor: pointer;
                 transition-duration: 500ms
             }
-
             .map-paginator.active {
                 color: #000000;
                 font-weight: 700;
                 background-color: #EDEDED;
             }
-
             .legend-box {
                 display: flex;
                 flex-flow: row;
@@ -78,14 +71,12 @@ looker.plugins.visualizations.add({
                 bottom: 10px;
                 left: 10px
             }
-
             .legend-bar {
                 height: 100px;
                 width: 10px;
                 background: linear-gradient(to top, rgba(255,237,234,0.8), rgba(179,18,31,0.8));
                 border-radius: 3px;
             }
-
             .legend-right {
                 display: flex;
                 flex-flow: column;
@@ -93,35 +84,27 @@ looker.plugins.visualizations.add({
                 padding-left: 5px;
                 justify-content: space-between;
                 font-size: 12px;
-
             }
-
             .popup-inner {
                 padding: 10px 20px 15px 20px;
             }
-
             .popup-title {
                 font: 20px/25px 'Roboto', sans-serif;
             }
-
             .descriptor {
                 font: 10px/9px 'Roboto', sans-serif;
                 text-transform: uppercase;
                 color: #727171;
             }
-
             .number {
                 font: 20px/25px 'Roboto', sans-serif;
             }
-
             h2, h4 {
                 margin: 0
             }
-
             .popup-title__wrapper {
                 margin-bottom: 17px;
             }
-
             .descriptor__wrapper {
                 margin-bottom: 13.2px;
                 padding-bottom: 9px;
@@ -129,22 +112,18 @@ looker.plugins.visualizations.add({
                 min-width: 200px;
                 width: 100%;
             }
-
             .mapboxgl-popup-content {
                 border-radius: 0px !important;
             }
-
             .mapboxgl-ctrl-bottom-right, .mapboxgl-ctrl-bottom-left {
                 display: none
             }
-
             .selected-locales__wrapper {
                 position: absolute;
                 bottom: 10px;
                 right: 10px;
                 z-index: 10;
             }
-
             .selected-locale {
                 background-color: black;
                 color: white;
@@ -161,7 +140,6 @@ looker.plugins.visualizations.add({
                 max-height: 46px;
                 width: fit-content;
             }
-
             .selected-locale__hidden {
                 background-color: black;
                 color: white;
@@ -178,7 +156,6 @@ looker.plugins.visualizations.add({
                 max-height: 46px;
                 width: fit-content;
             }
-
             .selected-locale__more {
                 background-color: #E8E7E7;
                 color: #151313;
@@ -196,29 +173,23 @@ looker.plugins.visualizations.add({
                 cursor: pointer;
                 max-height: 46px;
             }
-
             #selectedLocaleContainer {
                 display: flex;
                 flex-flow: row nowrap;
             }
-
             .selected-locale:not(:last-child) {
                 margin-right: 5px;
             }
-
             .selected-locale__hidden:not(:last-child) {
                 margin-right: 5px;
             }
-
             .remove-icon {
                 margin-left: 25px;
                 cursor: pointer;
             }
-
             .selected-locale > div, .selected-locale__hidden > div {
                 display: flex;
             }
-
             .selected-locale__more-box__wrapper {
                 position: absolute;
                 bottom: 55px;
@@ -232,36 +203,29 @@ looker.plugins.visualizations.add({
                 flex-direction: column;
                 padding: 10px 6px 10px 0;
             }
-
             .selected-locale__more-box__wrapper.active {
                 display: flex;
             }
-
             .selected-locale__more-box {
                 flex-flow: row wrap;
                 overflow-y: scroll;
                 display: flex;
                 padding: 10px 15px 0 20px;
             }
-
             .selected-locale__more-box > div {
                 margin-bottom: 10px;
             }
-
             ::-webkit-scrollbar-track {
                 background: #00000000;
             }
-
             ::-webkit-scrollbar {
                 width: 7px;
             }
-
             ::-webkit-scrollbar-thumb {
                 width: 7px;
                 border-radius: 17px;
                 background-color: #919191;
             }
-
             .ctrl-tooltip {
                 position: absolute;
                 top: 50%;
@@ -276,7 +240,6 @@ looker.plugins.visualizations.add({
                 max-width: 550px;
                 width: 60%;
             }
-
             .ctrl-tooltip__background {
                 position: absolute;
                 background: rgba(0, 0, 0, 0.4);
@@ -285,34 +248,28 @@ looker.plugins.visualizations.add({
                 z-index: 5;
                 display: none;
             }
-
             .ctrl-tooltip__background.active {
                 display: block;
             }
-
             .ctrl-tooltip h2 {
                 font-size: 16px;
                 line-height: 150%;
                 font-weight: 700;
                 margin-bottom: 24px;
             }
-
             .ctrl-tooltip p {
                 font-size: 16px;
                 line-height: 150%;
                 margin-bottom: 24px;
             }
-
             .ctrl-tooltip__top {
                 border-bottom: 1px solid #B8B8B8;
                 margin-bottom: 24px;
             }
-
             .ctrl-tooltip__bottom {
                 display: flex;
                 flex-flow: row-reverse nowrap;
             }
-
             .ctrl-tooltip button {
                 background: #000000;
                 border-radius: 8px;
@@ -326,7 +283,6 @@ looker.plugins.visualizations.add({
                 margin-left: auto;
                 cursor: pointer;
             }
-
             .tooltip-opener {
                 background: #B3121F;
                 width: 42px;
@@ -404,15 +360,14 @@ looker.plugins.visualizations.add({
         this.__map = new mapboxgl.Map({
             container: 'map',
             style: 'mapbox://styles/mapbox/light-v10',
-            center: [-98.5795, 39.8283],
-            zoom: 4,
-            projection: 'globe'
+            center: [-98.5795, 38.7],
+            zoom: 3.6,
+            minZoom: 2,
+            scrollZoom: false,
+            //projection: 'globe'
         });
 
         this.__map.addControl(new mapboxgl.NavigationControl());
-        this.__map.addControl(new mapboxgl.FullscreenControl());
-
-        this.__map.scrollZoom.disable();
 
         this.__map.on('load', () => {
             this.__map.addSource('statesData', {
@@ -637,7 +592,7 @@ looker.plugins.visualizations.add({
             if(totalCount === 0) {
                 autoChangeActive("states-join");
                 changeGranularity("State");
-                mapgl.easeTo({ center: [-98.5795, 39.8283], zoom: 4, duration: 1000 })
+                mapgl.easeTo({ center: [-98.5795, 38.7], zoom: 3.6, duration: 1000 })
             }
             moreWrapper.addEventListener("click", function() {
                 if(moreWrapper.classList.contains("active")) {
