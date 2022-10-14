@@ -3,14 +3,13 @@ import stateData from './mapbox-boundaries-adm1-v3_4.json';
 import cbsaData from './mapbox-boundaries-sta2-v3_4.json';
 import zipData from './mapbox-boundaries-pos4-v3_4.json';
 import regeneratorRuntime from "regenerator-runtime";
+import bbox from '@turf/bbox';
 import "core-js/stable";
 
 if (mapboxgl.version.indexOf('2.9.') === 0) Object.defineProperty(window, 'caches', { value: undefined });
 
 function numberWithCommas(x) {
-    if(!x) {
-        return undefined;
-    }
+    if(!x) return undefined;
     x = x.toFixed(0);
     var parts = x.toString().split(".");
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -22,12 +21,10 @@ looker.plugins.visualizations.add({
     label: "Custom Layered Mapbox Map",
     // Set up the initial state of the visualization
     create: function (element, config) {
-
         // Insert a <style> tag with some styles we'll use later.
         element.innerHTML = `
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
-            @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');
 
             * {
               box-sizing: border-box;
@@ -156,6 +153,30 @@ looker.plugins.visualizations.add({
                 border-radius: 30px;
                 display: flex;
                 align-items: center;
+                -moz-user-select: none;
+                -khtml-user-select: none;
+                -webkit-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+                max-height: 46px;
+                width: fit-content;
+            }
+
+            .selected-locale__hidden {
+                background-color: black;
+                color: white;
+                font: 14px/20px 'Roboto', sans-serif;
+                padding: 12px 20px;
+                border-radius: 30px;
+                display: flex;
+                align-items: center;
+                -moz-user-select: none;
+                -khtml-user-select: none;
+                -webkit-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+                max-height: 46px;
+                width: fit-content;
             }
 
             .selected-locale__more {
@@ -165,6 +186,15 @@ looker.plugins.visualizations.add({
                 padding: 12px;
                 font: 14px/20px 'Roboto', sans-serif;
                 border-radius: 30px;
+                min-width: 100px;
+                text-align: center;
+                -moz-user-select: none;
+                -khtml-user-select: none;
+                -webkit-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+                cursor: pointer;
+                max-height: 46px;
             }
 
             #selectedLocaleContainer {
@@ -176,13 +206,140 @@ looker.plugins.visualizations.add({
                 margin-right: 5px;
             }
 
+            .selected-locale__hidden:not(:last-child) {
+                margin-right: 5px;
+            }
+
             .remove-icon {
                 margin-left: 25px;
                 cursor: pointer;
             }
 
-            .selected-locale > div {
+            .selected-locale > div, .selected-locale__hidden > div {
                 display: flex;
+            }
+
+            .selected-locale__more-box__wrapper {
+                position: absolute;
+                bottom: 55px;
+                right: 0;
+                max-height: 400px;
+                width: 400px;
+                background-color: #E8E7E7;
+                border: 1px solid black;
+                border-radius: 15px;
+                display: none;
+                flex-direction: column;
+                padding: 10px 6px 10px 0;
+            }
+
+            .selected-locale__more-box__wrapper.active {
+                display: flex;
+            }
+
+            .selected-locale__more-box {
+                flex-flow: row wrap;
+                overflow-y: scroll;
+                display: flex;
+                padding: 10px 15px 0 20px;
+            }
+
+            .selected-locale__more-box > div {
+                margin-bottom: 10px;
+            }
+
+            ::-webkit-scrollbar-track {
+                background: #00000000;
+            }
+
+            ::-webkit-scrollbar {
+                width: 7px;
+            }
+
+            ::-webkit-scrollbar-thumb {
+                width: 7px;
+                border-radius: 17px;
+                background-color: #919191;
+            }
+
+            .ctrl-tooltip {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                padding: 24px;
+                height: 240px;
+                background-color: #E8E7E7;
+                border-radius: 12px;
+                font-family: 'Roboto', sans-serif;
+                max-width: 550px;
+                width: 60%;
+            }
+
+            .ctrl-tooltip__background {
+                position: absolute;
+                background: rgba(0, 0, 0, 0.4);
+                width: 100%;
+                height: 100%;
+                z-index: 5;
+                display: none;
+            }
+
+            .ctrl-tooltip__background.active {
+                display: block;
+            }
+
+            .ctrl-tooltip h2 {
+                font-size: 16px;
+                line-height: 150%;
+                font-weight: 700;
+                margin-bottom: 24px;
+            }
+
+            .ctrl-tooltip p {
+                font-size: 16px;
+                line-height: 150%;
+                margin-bottom: 24px;
+            }
+
+            .ctrl-tooltip__top {
+                border-bottom: 1px solid #B8B8B8;
+                margin-bottom: 24px;
+            }
+
+            .ctrl-tooltip__bottom {
+                display: flex;
+                flex-flow: row-reverse nowrap;
+            }
+
+            .ctrl-tooltip button {
+                background: #000000;
+                border-radius: 8px;
+                color: #FDFAF3;
+                width: 175px;
+                padding: 15px;
+                text-align: center;
+                font-size: 16px;
+                line-height: 18px;
+                font-family: 'Roboto', sans-serif;
+                margin-left: auto;
+                cursor: pointer;
+            }
+
+            .tooltip-opener {
+                background: #B3121F;
+                width: 42px;
+                height: 42px;
+                border-radius: 50%;
+                color: white;
+                position: absolute;
+                left: 15px;
+                top: 15px;
+                z-index: 3;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                cursor: pointer
             }
         </style>`;
 
@@ -202,8 +359,6 @@ looker.plugins.visualizations.add({
             }
         ];
 
-        this.__timesLoaded = 0
-
         // Create the top layer selector bar
         //###################################################################################//
 
@@ -222,18 +377,12 @@ looker.plugins.visualizations.add({
         this.__mapZipCodesButton.className = "map-paginator";
         this.__mapZipCodesButton.id = "zips-join";
 
-        this.__mapBEsButton = document.createElement('button');
-        this.__mapBEsButton.innerHTML = "Business Entities";
-        this.__mapBEsButton.className = "map-paginator";
-        this.__mapBEsButton.id = "business-entities-join";
-
         this.__mapPaginatorWrapper = document.createElement('div');
         this.__mapPaginatorWrapper.className = "map-paginator__wrapper";
 
         this.__mapPaginatorWrapper.appendChild(this.__mapStatesButton);
         this.__mapPaginatorWrapper.appendChild(this.__mapCBSAsButton);
         this.__mapPaginatorWrapper.appendChild(this.__mapZipCodesButton);
-        this.__mapPaginatorWrapper.appendChild(this.__mapBEsButton);
 
         element.appendChild(this.__mapPaginatorWrapper);
 
@@ -262,18 +411,16 @@ looker.plugins.visualizations.add({
         this.__map.addControl(new mapboxgl.NavigationControl());
         this.__map.addControl(new mapboxgl.FullscreenControl());
 
+        this.__map.scrollZoom.disable();
+
         this.__map.on('load', () => {
             this.__map.addSource('statesData', {
                 type: 'vector',
                 url: 'mapbox://mapbox.boundaries-adm1-v3'
-            });
-    
-            this.__map.addSource('cbsaData', {
+            }).addSource('cbsaData', {
                 type: 'vector',
                 url: 'mapbox://mapbox.boundaries-sta2-v3'
-            });
-    
-            this.__map.addSource('zipData', {
+            }).addSource('zipData', {
                 type: 'vector',
                 url: 'mapbox://mapbox.boundaries-pos4-v3'
             });
@@ -291,110 +438,313 @@ looker.plugins.visualizations.add({
         document.head.appendChild(link);
         document.head.appendChild(script);
     },
-    // Render in response to the data or settings changing
+
+    /* Render in response to the data or settings changing
+    Params:
+        @param data: array of returned data with fields
+        @param element: HTML DOM element where the vis is stored
+        @param config: Settings object on the tile where the vis is located
+        @param queryResponse: Entire response to query, includes data object and config object
+        @param details: ?
+        @param done: function to call to tell Looker you've finished rendering
+    */
     updateAsync: function (data, element, config, queryResponse, details, done) {
+        // Clear any errors from previous updates
+       this.clearErrors(queryResponse.fields);
 
-        // Reload Handler to accomodate the on load event only running once.
-        this.__timesLoaded++
-        console.log("Running Entire Visualization Update")
-
-        function throwMessage(locales) {
-            window.parent.parent.postMessage({ message: "crossFilterLocale", value: locales }, "*")
+        //When no dimensions and/or no measures are present the viz stops updating and displays an error
+        if (queryResponse.fields.measures.length < 1 || queryResponse.fields.dimensions.length < 1) {
+            this.addError({ title: "No Measures or Dimensions", message: "This chart requires a measure and a dimension." });
+            return;
         }
 
-        function changeGranularity(g) {
-            window.parent.parent.postMessage({ message: "changeGranularity", value: g }, "*")
-        }
+        /* Pass a message to the GTM Frontend to send a locale filter to looker
+        Params:
+            @param locales: object containing all filtered locales at different levels of granularity
+        */
+        const throwMessage = (locales) => window.parent.parent.postMessage({ message: "crossFilterLocale", value: locales }, "*");
+        /* Pass a message to the GTM Frontend to send a granularity grouping filter to looker
+        Params:
+            @param g: string representing new grouping to filter to
+        */
+        const changeGranularity = (g) => window.parent.parent.postMessage({ message: "changeGranularity", value: g }, "*");
 
-        let mapgl = this.__map
-
+        // Because `this` does not work properly in functions (`this` goes local), move the map to a more usable variable
+        let mapgl = this.__map;
+        // Find name of measure, as measure is requested KPI, which is dynamic, returns String
         const measureName = queryResponse.fields.measures[0].name;
+        // Find label of measure, as measure is requested KPI, which is dynamic. This prints to UI, returns String
         const measureLabel = queryResponse.fields.measures[0].label_short;
-        const localesWrapper = this.__selectedLocalesWrapper
-
+        // Move HTML DOM element from `this` to permanent variable, returns HTML DOM element
+        const localesWrapper = this.__selectedLocalesWrapper;
+        // Move Object from `this` to permanent variable, returns Object
+        const thisLayerNames = this.__LAYERNAMES;
+        // Tracks feature currently being hovered, DEV NOTE: To increase conciseness this could be altered to `hoveredFeatureId`, set to null
         let hoveredStateId = null; // Tracks hovered state and updates with popup
+        // The object responsible for capturing selected features, DEV NOTE: To increase conciseness this could be altered to `selectedFeatureNames`, set to object of empty arrays
         let filteredStateNames = {
             "states-join": [],
             "cbsas-join": [],
             "zips-join": []
         };
-        let activeLayer = "states-join"
 
-        async function runSelectionUpdate(element) {
+        /* Creates legend for the map
+        Params:
+            @param data: contains current data object at runtime
+            @param fieldName: holds the current grouping
+            @param max: the maximum value currently represented on the map
+        */
+        const createLegend = (data, fieldName, max) => {
+            // If the grouping is null, return. This keeps the legend in line with the active layer
+            if(determineNull(data, fieldName)) return;
+            // If there is an old legend, remove it before creating the new one.
+            const oldLegendBox = document.getElementById("mapboxLegend");
+            if(oldLegendBox) oldLegendBox.parentNode.removeChild(oldLegendBox);
+            // Create the elements necessary to construct the legend, all below elements should return HTML DOM nodes
+            const legendBox = document.createElement("div");
+            const legendLeft = document.createElement("div");
+            const legendRight = document.createElement("div");
+            const legendBar = document.createElement("div");
+            const legendRightTop = document.createElement("div");
+            const legendRightBottom = document.createElement("div");
+            // Add the proper classes to the legend elements consistent with the CSS styling in `create()`
+            legendBox.className = "legend-box";
+            legendLeft.className = "legend-left";
+            legendRight.className = "legend-right";
+            legendBar.className = "legend-bar";
+            // Display the maximum value with the proper number of commas for a number it's length
+            legendRightTop.innerHTML = numberWithCommas(max);
+            // The lower bound is 1, since 0 is never displayed
+            legendRightBottom.innerHTML = 1;
+            // Append all the elements in order to create the legend from the CSS styling in `create()`
+            legendLeft.appendChild(legendBar);
+            legendRight.appendChild(legendRightTop);
+            legendRight.appendChild(legendRightBottom);
+            legendBox.appendChild(legendLeft);
+            legendBox.appendChild(legendRight);
+            // Give the entire legend an id so it can be deleted on refresh.
+            legendBox.id = "mapboxLegend";
+            // Append the new legend to the entire visualization
+            element.appendChild(legendBox);
+        }
+
+        const showHideMultiTooltip = () => document.getElementById("mainTooltip").classList.toggle("active")
+
+        const createMultiTooltip = () => {
+            const mapboxbox = document.getElementById("map")
+            const tooltipOpener = mapboxbox.appendChild(document.createElement('div'))
+            const tooltipBackground = mapboxbox.appendChild(document.createElement("div"))
+            const tooltipOuter = tooltipBackground.appendChild(document.createElement("div"))
+            const tooltipInner = tooltipOuter.appendChild(document.createElement("div"))
+            const tooltipTop = tooltipOuter.appendChild(document.createElement("div"))
+            const tooltipBottom = tooltipOuter.appendChild(document.createElement("div"))
+            const tooltipTitle = tooltipTop.appendChild(document.createElement("h2"))
+            const tooltipDescription = tooltipTop.appendChild(document.createElement("p"))
+            const tooltipButton = tooltipBottom.appendChild(document.createElement("button"))
+            tooltipBackground.className = "ctrl-tooltip__background"
+            tooltipBackground.id = "mainTooltip"
+            tooltipOuter.className = "ctrl-tooltip"
+            tooltipInner.className = "ctrl-tooltip__inner"
+            tooltipTop.className = "ctrl-tooltip__top"
+            tooltipBottom.className = "ctrl-tooltip__bottom"
+            tooltipTitle.innerHTML = "Keyboard Shortcut"
+            tooltipDescription.innerHTML = "Press and hold the Ctrl key (or Cmd key on Macs) while clicking on different locations to select multiple at once."
+            tooltipButton.innerHTML = "Got It"
+            tooltipButton.addEventListener("click", showHideMultiTooltip)
+            tooltipOpener.className = "tooltip-opener"
+            tooltipOpener.innerHTML = '<i class="fa-solid fa-circle-info fa-2x" aria-hidden="true"></i>'
+            tooltipOpener.addEventListener("click", showHideMultiTooltip)
+        }
+
+        /* Runs an update function when a user removes or adds a feature to the selection list.
+        Params:
+            @param element: The element that holds the feature pucks.
+            @param selectedLayer: The layer where the click originated or where the feature should be removed from.
+        */
+        async function runSelectionUpdate(element, selectedLayer) {
+            // Holds the DOM element that is the lowest single parent, returns HTML DOM Element.
             const prevParent = document.getElementById("selectedLocaleContainer");
-            if(prevParent) {
-                element.removeChild(prevParent)
-            };
 
+            const oldMoreBox = document.getElementById("moreBoxWrapper")
+            // If the lowest parent element exists, delete it so it can be replaced.
+            if(prevParent) element.removeChild(prevParent);
+
+            if(oldMoreBox) element.removeChild(oldMoreBox)
+            // Create a new div to replace the last and give it an id for deletion later.
             const parent = document.createElement("div");
             parent.id = "selectedLocaleContainer";
+            // Use advanced filtering logic to determine all the values present and get a count
+            const prevalues = (Object.values(filteredStateNames)).map(element => element);
+            const values = [].concat.apply([], prevalues);
+            const count = values.length;
+            // Create a "See More" puck which users can click to display the hidden selected features.
+            const moreWrapper = document.createElement("div");
+            // When the total number of objects is greater than 3, simply change the text of the puck to display the number of hidden features
+            const moreBoxWrapper = document.createElement("div");
+            const moreBox = document.createElement("div");
+            moreBox.className = "selected-locale__more-box";
+            moreBox.id = "moreBox";
+            moreBoxWrapper.appendChild(moreBox);
+            moreBoxWrapper.id = "moreBoxWrapper";
+            moreBoxWrapper.className = "selected-locale__more-box__wrapper";
+            element.appendChild(moreBoxWrapper);
 
-            const values = (Object.values(filteredStateNames)).map(element => element[0])
-            console.log("values", values)
+            if(count > 3) {
+                moreWrapper.className = "selected-locale__more";
+                const moreText = document.createElement("span");
+                moreText.innerHTML = `+${count - 2} more locales`;
+                moreWrapper.appendChild(moreText);
+            };
+            // Total Count will keep a live count of number of features, returns Integer
+            let totalCount = 0;
+            // Rotate through each layer using Object.keys to get the layer names
+            Object.keys(filteredStateNames).forEach((layer) => {
+                // Rotate Through each selected value on a given layer, also keep the index to determine from which position to splice on removal.
+                filteredStateNames[layer].forEach((feature, index) => {
+                    // Increment total count to keep track of which elements should be hidden
+                    totalCount++;
+                    // Create each element in order to make a puck. In the else statement the pucks are not hidden.
+                    const selectedLocale = document.createElement("div");
+                    const selectedLocaleText = document.createElement("span");
+                    const removeButton = document.createElement('div');
+                    removeButton.innerHTML = '<i class="fa-solid fa-xmark remove-icon" aria-hidden="true"></i>';
+                    // Add an event listener that will remove a value from the list when the `x` is clicked
+                    removeButton.addEventListener("click", () => {
+                        // Remove a single element at the index supplied
+                        filteredStateNames[layer].splice(index, 1);
+                        // Update the selected locales on the GTM Dashboard
+                        throwMessage(filteredStateNames);
+                        // Rerun this function so that the pucks show the item is removed
+                        runSelectionUpdate(element, selectedLayer);
+                    })
+                    // Finish creating the puck and append it to the parent element.
+                    selectedLocaleText.innerHTML = feature;
+                    selectedLocale.appendChild(selectedLocaleText);
+                    selectedLocale.appendChild(removeButton);
 
-            for(let i = 0; i < values.length; i++) {
-                if(!values[i]) {
-                    continue;
-                }
-                if(i > 1) {
-                    const moreWrapper = document.createElement("div")
-                    moreWrapper.className = "selected-locale__more"
-                    const moreText = document.createElement("span")
-                    moreText.innerHTML = `+${values.length - 2} more locales`;
-                    moreWrapper.appendChild(moreText)
-                    parent.appendChild(moreWrapper)
-                    break;
-                }
-                const selectedLocale = document.createElement("div")
-                const selectedLocaleText = document.createElement("span")
-                const removeButton = document.createElement('div')
-                removeButton.innerHTML = '<i class="fa-solid fa-xmark remove-icon" aria-hidden="true"></i>';
-
-                removeButton.addEventListener("click", () => {
-                    values.splice(i, 1)
-                    runSelectionUpdate(element)
+                    if(totalCount > 2 && count > 3) {
+                        selectedLocale.className = "selected-locale__hidden";
+                        moreBox.appendChild(selectedLocale)
+                    } else {
+                        selectedLocale.className = "selected-locale";
+                        parent.appendChild(selectedLocale);
+                    }
                 })
-
-                selectedLocaleText.innerHTML = values[i]
-                selectedLocale.className = "selected-locale"
-
-                selectedLocale.appendChild(selectedLocaleText)
-                selectedLocale.appendChild(removeButton)
-                parent.appendChild(selectedLocale)
+            })
+            // When the total number of features is empty, revert to the states dashboard, zoom back to center and reset zoom.
+            if(totalCount === 0) {
+                autoChangeActive("states-join");
+                changeGranularity("State");
+                mapgl.easeTo({ center: [-98.5795, 39.8283], zoom: 4, duration: 1000 })
             }
-
-            throwMessage(values)
-            
-            element.appendChild(parent)
+            moreWrapper.addEventListener("click", function() {
+                if(moreWrapper.classList.contains("active")) {
+                    runSelectionUpdate(element, selectedLayer)
+                } else {
+                    moreWrapper.classList.toggle("active")
+                    moreWrapper.innerHTML = "Close"
+                    const elements = document.querySelectorAll(".selected-locale");
+                    const mbw = document.getElementById("moreBoxWrapper")
+                    const mb = document.getElementById("moreBox")
+                    //elements.forEach((puck) => puck.remove())
+                    elements.forEach((puck) => mb.appendChild(puck))
+                    mbw.classList.toggle("active")
+                }
+            })
+            // Add the hidden puck to the selected features
+            parent.appendChild(moreWrapper);
+            // Append the whole selected locale box to the visualization
+            element.appendChild(parent);
         };
 
-        mapgl.on('load', () => {
-            console.log("Running Map: On Load")
-            if(!determineNull(data, "dim_zi_map_vis.state")) {
-                activeLayer = "states-join"
-            } else if (!determineNull(data, "dim_zi_map_vis.cbsa")) {
-                activeLayer = "cbsas-join"
-            } else if (!determineNull(data, "dim_zi_map_vis.zip")) {
-                activeLayer = "zips-join"
+        /* Params:
+            @param e: mapBox click event
+            @param layerName: map layer from which mapBox click event originated
+            @param lookupData: object containing feature data
+            @param localesWrapper: HTML DOM element where pucks are located
+            @param replaceCommas: *optional* flag to replace commas in selected features Name
+        */
+        function hostClickEvent(e, layerName, lookupData, localesWrapper, replaceCommas) {
+            // bbox represents the point on the map that was just clicked, returned in the form of longLat
+            const bbox = [[e.point.x, e.point.y], [e.point.x, e.point.y]];
+            // selectedFeatures represents the features available at the point `bbox`, returns [featureA, featureB, etc...]
+            const selectedFeatures = mapgl.queryRenderedFeatures(bbox, {layers: [layerName]});
+            // line below maps `name` properties from selectedFeatures above, returns [nameA, nameB, etc...]
+            const names = selectedFeatures.map((feature) => feature.state.name);
+            // Line below gets the first name (name of closest feature to bbox), returns string or undefined
+            var selectedFeatureName = names[0];
+            // When selectedFeatureName is undefined, does not execute
+            if(selectedFeatureName) {
+                // If optional parameter `replaceCommas` is true, attempts to replace commas, upon failing executes console.warn
+                if(replaceCommas && selectedFeatureName) selectedFeatureName = selectedFeatureName.replace(",", "")
+                /* When the selectedFeatureName is not a property of lookupData or the 
+                selectedFeatureName is already included in `filteredStateNames[layerName]` then early return */
+                if(!lookupData.hasOwnProperty(selectedFeatureName) || filteredStateNames[layerName].includes(selectedFeatureName)) return;
+                /* Push the selectedFeatureName into the proper category of `filteredStateNames[layerName]`, 
+                inline and returns {layerNameA: [featureA, featureB, etc...], layerNameB: [featureA, featureB, etc...]} , etc... */
+                filteredStateNames[layerName].push(selectedFeatureName)
+                // Updates the pucks that show feature selection bottom-right of the map, returns null
+                runSelectionUpdate(localesWrapper, layerName);
+                // If the ctrl key is not selected, send data for filter update
+                if(!e.originalEvent.ctrlKey) {
+                    // Send data to GTM Frontend for a looker data refresh, returns null
+                    throwMessage(filteredStateNames)
+                    // Get layer names from filteredStateNames with Object.keys(), Returns array: ["layerX", "layerY", "layerZ"]
+                    const layers = Object.keys(filteredStateNames)
+                    // Check what the next layer in the list is after the layer currently in use, returns String or undefined
+                    const nextLayerName = layers[layers.findIndex((element) => element === layerName) + 1]
+                    // If nextLayerName is not undefined get the grouping name and change granularity to next lowest setting
+                    if(nextLayerName) {
+                        // Get the grouping name of the next layer, returns String no undefined
+                        const nextLayerGrouping = thisLayerNames[thisLayerNames.findIndex((element) => element.name === nextLayerName)].groupingName
+                        // Update the selected grouping in the GTM Frontend to swap granularities
+                        changeGranularity(nextLayerGrouping)
+                        // Automatically change the active layer to the specific layer supplied
+                        autoChangeActive(nextLayerName)
+                    }
+                }
             }
+        }
 
+        // When the map loads, create each initial visualization regardless of the existence of data
+        mapgl.on('load', () => {
             createStatesViz();
             createCBSAsViz();
             createZipsViz();
+            //createMultiTooltip();
+            //showHideMultiTooltip();
         });
 
+        // When the map goes idle, attach an event listener to the granularity buttons to change to that granularity
         mapgl.on('idle', () => {
-            console.log("Running Map: On Idle")
             this.__mapStatesButton.addEventListener("click", changeActive);
             this.__mapCBSAsButton.addEventListener("click", changeActive);
             this.__mapZipCodesButton.addEventListener("click", changeActive);
-            this.__mapBEsButton.addEventListener("click", changeActive);
         })
 
+        /* As Compared to the next function, this function automatically changes which layer is active rather than determining
+        What was clicked.
+        Params:
+            @param layer: The name of the layer that the visualization will swap to.
+        */
+        const autoChangeActive = (layer) => {
+            // Get all elements with the given class, this will return a collection of DOM elements that are the buttons
+            const els = document.getElementsByClassName("map-paginator");
+            // Loop through the 
+            for (let i = 0; i < els.length; i++) {
+                if(els[i].classList.contains("active")) els[i].classList.remove("active");
+                if(els[i].id === layer) els[i].classList.add("active")
+            };
+
+            for (let j = 0; j < this.__LAYERNAMES.length; j++) {
+                if(this.__LAYERNAMES[j].name !== layer) mapgl.setLayoutProperty(this.__LAYERNAMES[j].name, 'visibility', 'none');
+            };
+
+            const filteredDown = this.__LAYERNAMES.filter(item => item.name === layer)
+            if(filteredDown.length > 0) mapgl.setLayoutProperty(layer, 'visibility', 'visible');
+        }
+
         const changeActive = (e) => {
-            /* For reference, e.target is one of the buttons on top of the map. 
-            The event listeners are added in a map.on('idle', () => {}) but have
-            previously been added in map.on('load', () => {}) to the same effect*/
             if(!e.target.classList.contains("active")) {
                 // Updates the nav-bar active status
                 const els = document.getElementsByClassName("map-paginator");
@@ -408,27 +758,16 @@ looker.plugins.visualizations.add({
 
                 // Updates the layers' active status
                 for (let j = 0; j < this.__LAYERNAMES.length; j++) {
-                    if(this.__LAYERNAMES[j].name !== e.target.id) {
-                        try {
-                            mapgl.removeLayer(this.__LAYERNAMES[j].name);
-                        } catch {
-                            console.log("Layer does not yet exist")
-                        }
-                    };
+                    if(this.__LAYERNAMES[j].name !== e.target.id)mapgl.setLayoutProperty(this.__LAYERNAMES[j].name, 'visibility', 'none');
                 };
 
                 const filteredDown = this.__LAYERNAMES.filter(item => item.name === e.target.id)
-                console.log("filtered down")
-                console.log(filteredDown)
-                console.log(e.target.id)
 
                 if(filteredDown.length > 0) {
                     mapgl.setLayoutProperty(e.target.id, 'visibility', 'visible');
                     changeGranularity(filteredDown[0].groupingName)
                 }
 
-                console.log("DEBUG: GETTING LAYER VISIBILITY")
-                console.log(mapgl.getStyle().layers)
             }
         }
 
@@ -466,631 +805,7 @@ looker.plugins.visualizations.add({
             return arr.every(row => row[prop].value === null);
         }
 
-        function createMainViz() {
-            console.log("Creating visualization")
-
-            // Filter the data for the different groupings
-            const stateLookupData = filterStateLookupTable();
-            const cbsaLookupData = filterCBSALookupTable();
-            const zipLookupData = filterZipLookupTable();
-
-            // Get the max value for each of the different groupings
-            const maxStateValue = getMaxState(stateLookupData)
-            const maxCBSAValue = getMaxCBSA(cbsaLookupData)
-            const maxZipValue = getMaxZip(zipLookupData)
-
-            function filterStateLookupTable() {
-                const lookupData = {};
-    
-                const searchData = stateData.adm1.data.all
-    
-                Object.keys(searchData).forEach(function(key) {
-                    const featureData = searchData[key]
-                    if(featureData.iso_3166_1 === 'US') {
-                        lookupData[featureData['name']] = featureData
-                    }
-                })
-                return lookupData;
-            }
-
-            function filterCBSALookupTable() {
-                const lookupData = {};
-    
-                const searchData = cbsaData.sta2.data.all
-    
-                Object.keys(searchData).forEach(function(key) {
-                    const featureData = searchData[key]
-                    if(featureData.iso_3166_1 === 'US') {
-                        lookupData[featureData['name'].replace(",", "")] = featureData
-                    }
-                })
-                return lookupData;
-            }
-
-            function filterZipLookupTable() {
-                const lookupData = {};
-    
-                const searchData = zipData.pos4.data.all
-    
-                Object.keys(searchData).forEach(function(key) {
-                    const featureData = searchData[key]
-                    if(featureData.iso_3166_1 === 'US') {
-                        lookupData[featureData['unit_code']] = featureData
-                    }
-                })
-                return lookupData;
-            }
-
-            mapgl.addLayer({
-                id: 'states-join',
-                type: 'fill',
-                source: 'statesData',
-                'layout': {
-                    // Make the layer visible by default.
-                    'visibility': 'visible'
-                },
-                'source-layer': 'boundaries_admin_1',
-                paint: {
-                    'fill-color': [
-                        // In the case that 'feature-state': 'requestedKPI' is not null, interpolate the colors between the min and max, if it is null make the layer white.
-                        'case',
-                        ['!=', ['feature-state', 'requestedKPI'], null], ['interpolate', ['linear'], ['feature-state', 'requestedKPI'], 1, 'rgba(255,237,234,0.6)', maxStateValue, 'rgba(179,18,31,0.6)'],
-                        'rgba(255, 255, 255, 0)'
-                    ]
-                }
-            }, 'waterway-label');
-
-            mapgl.addLayer({
-                id: 'cbsas-join',
-                type: 'fill',
-                source: 'cbsaData',
-                'layout': {
-                    // Make the layer visible by default.
-                    'visibility': 'visible'
-                },
-                'source-layer': 'boundaries_stats_2',
-                paint: {
-                    'fill-color': [
-                        // In the case that 'feature-state': 'requestedKPI' is not null, interpolate the colors between the min and max, if it is null make the layer white.
-                        'case',
-                        ['!=', ['feature-state', 'requestedKPI'], null], ['interpolate', ['linear'], ['feature-state', 'requestedKPI'], 1, 'rgba(255,237,234,0.6)', maxCBSAValue, 'rgba(179,18,31,0.6)'],
-                        'rgba(255, 255, 255, 0)'
-                    ]
-                }
-            }, 'waterway-label');
-
-            mapgl.addLayer({
-                id: 'zips-join',
-                type: 'fill',
-                source: 'zipData',
-                'layout': {
-                    // Make the layer visible by default.
-                    'visibility': 'visible'
-                },
-                'source-layer': 'boundaries_postal_4',
-                paint: {
-                    'fill-color': [
-                        // In the case that 'feature-state': 'requestedKPI' is not null, interpolate the colors between the min and max, if it is null make the layer white.
-                        'case',
-                        ['!=', ['feature-state', 'requestedKPI'], null], ['interpolate', ['linear'], ['feature-state', 'requestedKPI'], 1, 'rgba(255,237,234,0.6)', maxZipValue, 'rgba(179,18,31,0.6)'],
-                        'rgba(255, 255, 255, 0)'
-                    ]
-                }
-            }, 'waterway-label');
-
-            const popup = new mapboxgl.Popup({
-                closeButton: false,
-                closeOnClick: false,
-                className: 'gtm-map-popup',
-                maxWidth: '300px'
-            });
-
-            const statePopup = new mapboxgl.Popup({
-                closeButton: false,
-                closeOnClick: false,
-                className: 'gtm-map-popup',
-                maxWidth: '300px'
-            });
-
-            const cbsaPopup = new mapboxgl.Popup({
-                closeButton: false,
-                closeOnClick: false,
-                className: 'gtm-map-popup',
-                maxWidth: '300px'
-            });
-
-            const zipPopup = new mapboxgl.Popup({
-                closeButton: false,
-                closeOnClick: false,
-                className: 'gtm-map-popup',
-                maxWidth: '300px'
-            });
-
-            mapgl.on('mousemove', 'states-join', (e) => {
-                if (e.features.length > 0) {
-
-                    const realCoords = [e.lngLat.lng, e.lngLat.lat]
-                    const reqKPI = e.features[0].state.requestedKPI;
-                    const state = e.features[0].state.name
-
-                    const description = `
-                    <div class="popup-inner">
-                        <div class="popup-inner__vertical">
-                            <div class="popup-title__wrapper">
-                                <h2 class="popup-title">${state}</h2>
-                            </div>
-                            <div class="popup-inner__horizontal">
-                                <div class="popup-inner__horizontal-inner__vertical">
-                                    <div class="descriptor__wrapper">
-                                        <h4 class="descriptor">${measureLabel}</h4>
-                                    </div>
-                                    <div class="number__wrapper">
-                                        <h4 class="number">${numberWithCommas(reqKPI)}</h4>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`
-
-                    if(e.features[0].state.requestedKPI) {
-                        popup.setLngLat(realCoords).setHTML(description).addTo(mapgl);
-                    } else {
-                        popup.remove;
-                        return;
-                    }
-
-                    if (hoveredStateId !== null) {
-                        mapgl.setFeatureState(
-                            { source: 'statesData', id: hoveredStateId, sourceLayer: 'boundaries_admin_1' }, 
-                            { hover: false }
-                        );
-                    }
-                    hoveredStateId = e.features[0].id;
-                    mapgl.setFeatureState(
-                        { source: 'statesData', id: hoveredStateId, sourceLayer: 'boundaries_admin_1' },
-                        { hover: true }
-                    );
-                }
-            });
-
-            mapgl.on('mousemove', 'cbsas-join', (e) => {
-                if (e.features.length > 0) {
-
-                    const realCoords = [e.lngLat.lng, e.lngLat.lat]
-                    const reqKPI = e.features[0].state.requestedKPI;
-                    const cbsa = e.features[0].state.name
-
-                    const description = `
-                    <div class="popup-inner">
-                        <div class="popup-inner__vertical">
-                            <div class="popup-title__wrapper">
-                                <h2 class="popup-title">${cbsa}</h2>
-                            </div>
-                            <div class="popup-inner__horizontal">
-                                <div class="popup-inner__horizontal-inner__vertical">
-                                    <div class="descriptor__wrapper">
-                                        <h4 class="descriptor">${measureLabel}</h4>
-                                    </div>
-                                    <div class="number__wrapper">
-                                        <h4 class="number">${numberWithCommas(reqKPI)}</h4>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`
-
-                    if(e.features[0].state.requestedKPI) {
-                        popup.setLngLat(realCoords).setHTML(description).addTo(mapgl);
-                    } else {
-                        popup.remove
-                    }
-
-                    if (hoveredStateId !== null) {
-                        mapgl.setFeatureState(
-                            { source: 'cbsaData', id: hoveredStateId, sourceLayer: 'boundaries_stats_2' }, 
-                            { hover: false }
-                        );
-                    }
-                    hoveredStateId = e.features[0].id;
-                    mapgl.setFeatureState(
-                        { source: 'cbsaData', id: hoveredStateId, sourceLayer: 'boundaries_stats_2' },
-                        { hover: true }
-                    );
-                }
-            });
-
-            mapgl.on('mousemove', 'zips-join', (e) => {
-                if (e.features.length > 0) {
-
-                    const realCoords = [e.lngLat.lng, e.lngLat.lat]
-                    const reqKPI = e.features[0].state.requestedKPI;
-                    const zip = e.features[0].state.name
-
-                    const description = `
-                    <div class="popup-inner">
-                        <div class="popup-inner__vertical">
-                            <div class="popup-title__wrapper">
-                                <h2 class="popup-title">${zip}</h2>
-                            </div>
-                            <div class="popup-inner__horizontal">
-                                <div class="popup-inner__horizontal-inner__vertical">
-                                    <div class="descriptor__wrapper">
-                                        <h4 class="descriptor">${measureLabel}</h4>
-                                    </div>
-                                    <div class="number__wrapper">
-                                        <h4 class="number">${numberWithCommas(reqKPI)}</h4>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`
-
-                    if(e.features[0].state.requestedKPI) {
-                        popup.setLngLat(realCoords).setHTML(description).addTo(mapgl);
-                    } else {
-                        popup.remove
-                    }
-
-                    if (hoveredStateId !== null) {
-                        mapgl.setFeatureState(
-                            { source: 'zipData', id: hoveredStateId, sourceLayer: 'boundaries_postal_4' }, 
-                            { hover: false }
-                        );
-                    }
-                    hoveredStateId = e.features[0].id;
-                    mapgl.setFeatureState(
-                        { source: 'zipData', id: hoveredStateId, sourceLayer: 'boundaries_postal_4' },
-                        { hover: true }
-                    );
-                }
-            });
-
-            mapgl.on('mouseleave', 'states-join', () => {
-                if (hoveredStateId !== null) {
-                    mapgl.setFeatureState(
-                        { source: 'statesData', id: hoveredStateId, sourceLayer: 'boundaries_admin_1' },
-                        { hover: false }
-                    );
-                    popup.remove();
-                }
-                hoveredStateId = null;
-            });
-
-            mapgl.on('mouseleave', 'cbsas-join', () => {
-                if (hoveredStateId !== null) {
-                    mapgl.setFeatureState(
-                        { source: 'cbsaData', id: hoveredStateId, sourceLayer: 'boundaries_stats_2' },
-                        { hover: false }
-                    );
-                    popup.remove();
-                }
-                hoveredStateId = null;
-            });
-
-            mapgl.on('mouseleave', 'zips-join', () => {
-                if (hoveredStateId !== null) {
-                    mapgl.setFeatureState(
-                        { source: 'zipData', id: hoveredStateId, sourceLayer: 'boundaries_postal_4' },
-                        { hover: false }
-                    );
-                    popup.remove();
-                }
-                hoveredStateId = null;
-            });
-
-            mapgl.on('click', 'states-join', (e) => {
-                // Set `bbox` as 5px reactangle area around clicked point.
-                const bbox = [
-                    [e.point.x, e.point.y],
-                    [e.point.x, e.point.y]
-                ];
-
-                const selectedFeatures = mapgl.queryRenderedFeatures(bbox, {
-                    layers: ['states-join']
-                });
-
-                const name = selectedFeatures.map(
-                    (feature) => feature.state.name
-                );
-
-                const selectedFeatureName = name[0]
-                console.log("active-layer of names", filteredStateNames[activeLayer])
-
-                if(!stateLookupData.hasOwnProperty(selectedFeatureName) || filteredStateNames[activeLayer].includes(selectedFeatureName)) {
-                    return;
-                }
-
-                filteredStateNames[activeLayer].push(selectedFeatureName)
-                console.dir(filteredStateNames)
-                runSelectionUpdate(localesWrapper);
-            });
-
-            mapgl.on('click', 'cbsas-join', (e) => {
-                // Set `bbox` as 5px reactangle area around clicked point.
-                const bbox = [
-                    [e.point.x, e.point.y],
-                    [e.point.x, e.point.y]
-                ];
-
-                const selectedFeatures = mapgl.queryRenderedFeatures(bbox, {
-                    layers: ['cbsas-join']
-                });
-
-                const name = selectedFeatures.map(
-                    (feature) => feature.state.name
-                );
-
-                const selectedFeatureName = name[0]
-
-                if(!cbsaLookupData.hasOwnProperty(selectedFeatureName)) {
-                    return;
-                }
-
-                //mapgl.setFilter('states-join', ['in', 'id', ...id]);
-
-                filteredStateNames.push(selectedFeatureName)
-                runSelectionUpdate(localesWrapper);
-            });
-
-            mapgl.on('click', (e) => {
-                // Set `bbox` as 5px reactangle area around clicked point.
-                const bbox = [
-                    [e.point.x, e.point.y],
-                    [e.point.x, e.point.y]
-                ];
-
-                const selectedFeatures = mapgl.queryRenderedFeatures(bbox, {
-                    layers: ['zips-join']
-                });
-
-                const name = selectedFeatures.map(
-                    (feature) => feature.state.name
-                );
-
-                const selectedFeatureName = name[0]
-
-                if(!zipLookupData.hasOwnProperty(selectedFeatureName)) {
-                    return;
-                }
-
-                //mapgl.setFilter('states-join', ['in', 'id', ...id]);
-
-                filteredStateNames.push(selectedFeatureName)
-                runSelectionUpdate(localesWrapper);
-            });
-
-            function setStates() {
-                for (let i = 0; i < data.length; i++) {
-                    const row = data[i]
-                    if(!stateLookupData.hasOwnProperty(row["dim_zi_map_vis.state"].value)) {
-                        continue;
-                    }
-                    mapgl.setFeatureState(
-                        {
-                            source: "statesData",
-                            sourceLayer: 'boundaries_admin_1',
-                            id: stateLookupData[row["dim_zi_map_vis.state"].value].feature_id
-                        },
-                        {
-                            requestedKPI: row[measureName].value,
-                            fipsCode: stateLookupData[row["dim_zi_map_vis.state"].value].unit_code,
-                            name: stateLookupData[row["dim_zi_map_vis.state"].value].name,
-                            hovered: false
-                        }
-                    )
-                }
-            }
-
-            function setCBSAs() {
-                for (let i = 0; i < data.length; i++) {
-                    const row = data[i]
-                    if(!cbsaLookupData.hasOwnProperty(row["dim_zi_map_vis.cbsa"].value)) {
-                        continue;
-                    }
-                    mapgl.setFeatureState(
-                        {
-                            source: "cbsaData",
-                            sourceLayer: 'boundaries_stats_2',
-                            id: cbsaLookupData[row["dim_zi_map_vis.cbsa"].value].feature_id
-                        },
-                        {
-                            requestedKPI: row[measureName].value,
-                            name: cbsaLookupData[row["dim_zi_map_vis.cbsa"].value].name,
-                            hovered: false
-                        }
-                    )
-                }
-            }
-
-            function setZips() {
-                for (let i = 0; i < data.length; i++) {
-                    const row = data[i]
-                    if(!zipLookupData.hasOwnProperty(row["dim_zi_map_vis.zip"].value)) {
-                        continue;
-                    }
-                    mapgl.setFeatureState(
-                        {
-                            source: "zipData",
-                            sourceLayer: 'boundaries_postal_4',
-                            id: zipLookupData[row["dim_zi_map_vis.zip"].value].feature_id
-                        },
-                        {
-                            requestedKPI: row[measureName].value,
-                            name: zipLookupData[row["dim_zi_map_vis.zip"].value].unit_code,
-                            hovered: false
-                        }
-                    )
-                }
-            }
-
-            function createStatesLegend() {
-                if(determineNull(data, "dim_zi_map_vis.state")) {
-                    return;
-                }
-
-                try {
-                    const oldLegendBox = document.getElementById("mapboxLegend")
-                    oldLegendBox.parentNode.removeChild(oldLegendBox)
-                } catch {
-                    console.log("Unable to remove old legend because there is no old legend.")
-                }
-
-                const legendBox = document.createElement("div")
-                const legendLeft = document.createElement("div")
-                const legendRight = document.createElement("div")
-                const legendBar = document.createElement("div")
-                const legendRightTop = document.createElement("div")
-                const legendRightBottom = document.createElement("div")
-
-                legendBox.className = "legend-box"
-                legendLeft.className = "legend-left"
-                legendRight.className = "legend-right"
-                legendBar.className = "legend-bar"
-
-                legendRightTop.innerHTML = numberWithCommas(maxStateValue)
-                legendRightBottom.innerHTML = 1
-
-                legendLeft.appendChild(legendBar)
-
-                legendRight.appendChild(legendRightTop)
-                legendRight.appendChild(legendRightBottom)
-
-                legendBox.appendChild(legendLeft)
-                legendBox.appendChild(legendRight)
-
-                legendBox.id = "mapboxLegend"
-
-                element.appendChild(legendBox)
-            }
-
-            function createCBSALegend() {
-                if(determineNull(data, "dim_zi_map_vis.cbsa")) {
-                    return;
-                }
-
-                try {
-                    const oldLegendBox = document.getElementById("mapboxLegend")
-                    oldLegendBox.parentNode.removeChild(oldLegendBox)
-                } catch {
-                    console.log("Unable to remove old legend because there is no old legend.")
-                }
-
-                const legendBox = document.createElement("div")
-                const legendLeft = document.createElement("div")
-                const legendRight = document.createElement("div")
-                const legendBar = document.createElement("div")
-                const legendRightTop = document.createElement("div")
-                const legendRightBottom = document.createElement("div")
-
-                legendBox.className = "legend-box"
-                legendLeft.className = "legend-left"
-                legendRight.className = "legend-right"
-                legendBar.className = "legend-bar"
-
-                legendRightTop.innerHTML = numberWithCommas(maxCBSAValue)
-                legendRightBottom.innerHTML = 1
-
-                legendLeft.appendChild(legendBar)
-
-                legendRight.appendChild(legendRightTop)
-                legendRight.appendChild(legendRightBottom)
-
-                legendBox.appendChild(legendLeft)
-                legendBox.appendChild(legendRight)
-
-                legendBox.id = "mapboxLegend"
-
-                element.appendChild(legendBox)
-            }
-
-            function createZipsLegend() {
-                if(determineNull(data, "dim_zi_map_vis.zip")) {
-                    return;
-                }
-
-                try {
-                    const oldLegendBox = document.getElementById("mapboxLegend")
-                    oldLegendBox.parentNode.removeChild(oldLegendBox)
-                } catch {
-                    console.log("Unable to remove old legend because there is no old legend.")
-                }
-
-                const legendBox = document.createElement("div")
-                const legendLeft = document.createElement("div")
-                const legendRight = document.createElement("div")
-                const legendBar = document.createElement("div")
-                const legendRightTop = document.createElement("div")
-                const legendRightBottom = document.createElement("div")
-
-                legendBox.className = "legend-box"
-                legendLeft.className = "legend-left"
-                legendRight.className = "legend-right"
-                legendBar.className = "legend-bar"
-
-                legendRightTop.innerHTML = numberWithCommas(maxValue)
-                legendRightBottom.innerHTML = 1
-
-                legendLeft.appendChild(legendBar)
-
-                legendRight.appendChild(legendRightTop)
-                legendRight.appendChild(legendRightBottom)
-
-                legendBox.appendChild(legendLeft)
-                legendBox.appendChild(legendRight)
-
-                legendBox.id = "mapboxLegend"
-
-                element.appendChild(legendBox)
-            }
-
-            createStatesLegend()
-            createCBSALegend()
-            createZipsLegend()
-
-            // Check if `statesData` source is loaded.
-            function setAfterLoadStates(event) {
-                if (event.sourceID !== 'statesData' && !event.isSourceLoaded) return;
-                setStates();
-                mapgl.off('sourcedata', setAfterLoadStates);
-            }
-    
-            // If `statesData` source is loaded, call `setStates()`.
-            if (mapgl.isSourceLoaded('statesData')) {
-                setStates();
-            } else {
-                mapgl.on('sourcedata', setAfterLoadStates);
-            }
-
-            // Check if `statesData` source is loaded.
-            function setAfterLoadCBSAs(event) {
-                if (event.sourceID !== 'cbsaData' && !event.isSourceLoaded) return;
-                setCBSAs();
-                mapgl.off('sourcedata', setAfterLoadCBSAs);
-            }
-    
-            // If `statesData` source is loaded, call `setStates()`.
-            if (mapgl.isSourceLoaded('cbsaData')) {
-                setCBSAs();
-            } else {
-                mapgl.on('sourcedata', setAfterLoadCBSAs);
-            }
-
-            function setAfterLoadZips(event) {
-                if (event.sourceID !== 'zipData' && !event.isSourceLoaded) return;
-                setZips();
-                mapgl.off('sourcedata', setAfterLoadZips);
-            }
-    
-            // If `statesData` source is loaded, call `setStates()`.
-            if (mapgl.isSourceLoaded('zipData')) {
-                setZips();
-            } else {
-                mapgl.on('sourcedata', setAfterLoadZips);
-            }
-        }
-
         function createStatesViz() {
-            console.log("Creating States Visualization")
             const lookupData = filterLookupTable();
 
             function filterLookupTable() {
@@ -1098,7 +813,7 @@ looker.plugins.visualizations.add({
     
                 const searchData = stateData.adm1.data.all
     
-                Object.keys(searchData).forEach(function(key) {
+                Object.keys(searchData).forEach((key) => {
                     const featureData = searchData[key]
                     if(featureData.iso_3166_1 === 'US') {
                         lookupData[featureData['name']] = featureData
@@ -1106,14 +821,7 @@ looker.plugins.visualizations.add({
                 })
                 return lookupData;
             }
-
             const maxValue = getMaxState(lookupData)
-
-            try {
-                mapgl.removeLayer('states-join')
-            } catch {
-                console.log("The layer doesn't exist yet, creating now")
-            }
 
             mapgl.addLayer({
                 id: 'states-join',
@@ -1140,7 +848,6 @@ looker.plugins.visualizations.add({
                 className: 'gtm-map-popup',
                 maxWidth: '300px'
             });
-
 
             mapgl.on('mousemove', 'states-join', (e) => {
                 if (e.features.length > 0) {
@@ -1202,33 +909,7 @@ looker.plugins.visualizations.add({
                 hoveredStateId = null;
             });
 
-            mapgl.on('click', (e) => {
-                // Set `bbox` as 5px reactangle area around clicked point.
-                const bbox = [
-                    [e.point.x, e.point.y],
-                    [e.point.x, e.point.y]
-                ];
-
-                const selectedFeatures = mapgl.queryRenderedFeatures(bbox, {
-                    layers: ['states-join']
-                });
-
-                const name = selectedFeatures.map(
-                    (feature) => feature.state.name
-                );
-
-                const selectedFeatureName = name[0]
-                console.log("active-layer of names", filteredStateNames[activeLayer])
-
-                if(!lookupData.hasOwnProperty(selectedFeatureName) || filteredStateNames[activeLayer].includes(selectedFeatureName)) {
-                    return;
-                }
-                
-
-                filteredStateNames[activeLayer].push(selectedFeatureName)
-                console.dir(filteredStateNames)
-                runSelectionUpdate(localesWrapper);
-            });
+            mapgl.on('click', 'states-join', (e) => hostClickEvent(e, 'states-join', lookupData, localesWrapper));
 
             function setStates() {
                 for (let i = 0; i < data.length; i++) {
@@ -1252,65 +933,25 @@ looker.plugins.visualizations.add({
                 }
             }
 
-            function createLegend() {
-                if(determineNull(data, "dim_zi_map_vis.state")) {
-                    return;
-                }
-
-                try {
-                    const oldLegendBox = document.getElementById("mapboxLegend")
-                    oldLegendBox.parentNode.removeChild(oldLegendBox)
-                } catch {
-                    console.log("Unable to remove old legend because there is no old legend.")
-                }
-
-                const legendBox = document.createElement("div")
-                const legendLeft = document.createElement("div")
-                const legendRight = document.createElement("div")
-                const legendBar = document.createElement("div")
-                const legendRightTop = document.createElement("div")
-                const legendRightBottom = document.createElement("div")
-
-                legendBox.className = "legend-box"
-                legendLeft.className = "legend-left"
-                legendRight.className = "legend-right"
-                legendBar.className = "legend-bar"
-
-                legendRightTop.innerHTML = numberWithCommas(maxValue)
-                legendRightBottom.innerHTML = 1
-
-                legendLeft.appendChild(legendBar)
-
-                legendRight.appendChild(legendRightTop)
-                legendRight.appendChild(legendRightBottom)
-
-                legendBox.appendChild(legendLeft)
-                legendBox.appendChild(legendRight)
-
-                legendBox.id = "mapboxLegend"
-
-                element.appendChild(legendBox)
-            }
-
-            createLegend()
+            createLegend(data, "dim_zi_map_vis.state", maxValue)
 
             // Check if `statesData` source is loaded.
-            function setAfterLoad(event) {
+            function setAfterLoadStates(event) {
                 if (event.sourceID !== 'statesData' && !event.isSourceLoaded) return;
                 setStates();
-                mapgl.off('sourcedata', setAfterLoad);
+                mapgl.off('sourcedata', setAfterLoadStates);
             }
     
             // If `statesData` source is loaded, call `setStates()`.
             if (mapgl.isSourceLoaded('statesData')) {
                 setStates();
             } else {
-                mapgl.on('sourcedata', setAfterLoad);
+                mapgl.on('sourcedata', setAfterLoadStates);
             }
         }
 
+
         function createCBSAsViz() {
-            console.log("Creating CBSAs Visualization")
             const lookupData = filterLookupTable();
 
             function filterLookupTable() {
@@ -1318,7 +959,7 @@ looker.plugins.visualizations.add({
     
                 const searchData = cbsaData.sta2.data.all
     
-                Object.keys(searchData).forEach(function(key) {
+                Object.keys(searchData).forEach((key) => {
                     const featureData = searchData[key]
                     if(featureData.iso_3166_1 === 'US') {
                         lookupData[featureData['name'].replace(",", "")] = featureData
@@ -1330,12 +971,6 @@ looker.plugins.visualizations.add({
 
 
             const maxValue = getMaxCBSA(lookupData)
-
-            try {
-                mapgl.removeLayer('cbsas-join')
-            } catch {
-                console.log("The layer doesn't exist yet, creating now")
-            }
 
             mapgl.addLayer({
                 id: 'cbsas-join',
@@ -1423,32 +1058,7 @@ looker.plugins.visualizations.add({
                 hoveredStateId = null;
             });
 
-            mapgl.on('click', (e) => {
-                // Set `bbox` as 5px reactangle area around clicked point.
-                const bbox = [
-                    [e.point.x, e.point.y],
-                    [e.point.x, e.point.y]
-                ];
-
-                const selectedFeatures = mapgl.queryRenderedFeatures(bbox, {
-                    layers: ['cbsas-join']
-                });
-
-                const name = selectedFeatures.map(
-                    (feature) => feature.state.name
-                );
-
-                const selectedFeatureName = name[0]
-
-                if(!lookupData.hasOwnProperty(selectedFeatureName)) {
-                    return;
-                }
-
-                //mapgl.setFilter('states-join', ['in', 'id', ...id]);
-
-                filteredStateNames.push(selectedFeatureName)
-                runSelectionUpdate(localesWrapper);
-            });
+            mapgl.on('click', 'cbsas-join', (e) => hostClickEvent(e, 'cbsas-join', lookupData, localesWrapper, true));
 
             function setStates() {
                 for (let i = 0; i < data.length; i++) {
@@ -1471,65 +1081,24 @@ looker.plugins.visualizations.add({
                 }
             }
 
-            function createLegend() {
-                if(determineNull(data, "dim_zi_map_vis.cbsa")) {
-                    return;
-                }
-
-                try {
-                    const oldLegendBox = document.getElementById("mapboxLegend")
-                    oldLegendBox.parentNode.removeChild(oldLegendBox)
-                } catch {
-                    console.log("Unable to remove old legend because there is no old legend.")
-                }
-
-                const legendBox = document.createElement("div")
-                const legendLeft = document.createElement("div")
-                const legendRight = document.createElement("div")
-                const legendBar = document.createElement("div")
-                const legendRightTop = document.createElement("div")
-                const legendRightBottom = document.createElement("div")
-
-                legendBox.className = "legend-box"
-                legendLeft.className = "legend-left"
-                legendRight.className = "legend-right"
-                legendBar.className = "legend-bar"
-
-                legendRightTop.innerHTML = numberWithCommas(maxValue)
-                legendRightBottom.innerHTML = 1
-
-                legendLeft.appendChild(legendBar)
-
-                legendRight.appendChild(legendRightTop)
-                legendRight.appendChild(legendRightBottom)
-
-                legendBox.appendChild(legendLeft)
-                legendBox.appendChild(legendRight)
-
-                legendBox.id = "mapboxLegend"
-
-                element.appendChild(legendBox)
-            }
-
-            createLegend()
+            createLegend(data, "dim_zi_map_vis.cbsa", maxValue)
 
             // Check if `statesData` source is loaded.
-            function setAfterLoad(event) {
+            function setAfterLoadCBSAs(event) {
                 if (event.sourceID !== 'cbsaData' && !event.isSourceLoaded) return;
                 setStates();
-                mapgl.off('sourcedata', setAfterLoad);
+                mapgl.off('sourcedata', setAfterLoadCBSAs);
             }
     
             // If `statesData` source is loaded, call `setStates()`.
             if (mapgl.isSourceLoaded('cbsaData')) {
                 setStates();
             } else {
-                mapgl.on('sourcedata', setAfterLoad);
+                mapgl.on('sourcedata', setAfterLoadCBSAs);
             }
         }
 
         function createZipsViz() {
-            console.log("Creating Zip Codes Visualization")
             const lookupData = filterLookupTable();
 
             function filterLookupTable() {
@@ -1537,7 +1106,7 @@ looker.plugins.visualizations.add({
     
                 const searchData = zipData.pos4.data.all
     
-                Object.keys(searchData).forEach(function(key) {
+                Object.keys(searchData).forEach((key) => {
                     const featureData = searchData[key]
                     if(featureData.iso_3166_1 === 'US') {
                         lookupData[featureData['unit_code']] = featureData
@@ -1547,12 +1116,6 @@ looker.plugins.visualizations.add({
             }
 
             const maxValue = getMaxZip(lookupData)
-
-            try {
-                mapgl.removeLayer('zips-join')
-            } catch {
-                console.log("The layer doesn't exist yet, creating now")
-            }
 
             mapgl.addLayer({
                 id: 'zips-join',
@@ -1640,32 +1203,7 @@ looker.plugins.visualizations.add({
                 hoveredStateId = null;
             });
 
-            mapgl.on('click', (e) => {
-                // Set `bbox` as 5px reactangle area around clicked point.
-                const bbox = [
-                    [e.point.x, e.point.y],
-                    [e.point.x, e.point.y]
-                ];
-
-                const selectedFeatures = mapgl.queryRenderedFeatures(bbox, {
-                    layers: ['zips-join']
-                });
-
-                const name = selectedFeatures.map(
-                    (feature) => feature.state.name
-                );
-
-                const selectedFeatureName = name[0]
-
-                if(!lookupData.hasOwnProperty(selectedFeatureName)) {
-                    return;
-                }
-
-                //mapgl.setFilter('states-join', ['in', 'id', ...id]);
-
-                filteredStateNames.push(selectedFeatureName)
-                runSelectionUpdate(localesWrapper);
-            });
+            mapgl.on('click', 'zips-join', (e) => hostClickEvent(e, 'zips-join', lookupData, localesWrapper));
 
             function setStates() {
                 for (let i = 0; i < data.length; i++) {
@@ -1688,98 +1226,206 @@ looker.plugins.visualizations.add({
                 }
             }
 
-            function createLegend() {
-                if(determineNull(data, "dim_zi_map_vis.zip")) {
-                    return;
-                }
-
-                try {
-                    const oldLegendBox = document.getElementById("mapboxLegend")
-                    oldLegendBox.parentNode.removeChild(oldLegendBox)
-                } catch {
-                    console.log("Unable to remove old legend because there is no old legend.")
-                }
-
-                const legendBox = document.createElement("div")
-                const legendLeft = document.createElement("div")
-                const legendRight = document.createElement("div")
-                const legendBar = document.createElement("div")
-                const legendRightTop = document.createElement("div")
-                const legendRightBottom = document.createElement("div")
-
-                legendBox.className = "legend-box"
-                legendLeft.className = "legend-left"
-                legendRight.className = "legend-right"
-                legendBar.className = "legend-bar"
-
-                legendRightTop.innerHTML = numberWithCommas(maxValue)
-                legendRightBottom.innerHTML = 1
-
-                legendLeft.appendChild(legendBar)
-
-                legendRight.appendChild(legendRightTop)
-                legendRight.appendChild(legendRightBottom)
-
-                legendBox.appendChild(legendLeft)
-                legendBox.appendChild(legendRight)
-
-                legendBox.id = "mapboxLegend"
-
-                element.appendChild(legendBox)
-            }
-
-            createLegend()
-
+            createLegend(data, "dim_zi_map_vis.zip", maxValue)
+            
             // Check if `statesData` source is loaded.
-            function setAfterLoad(event) {
+            function setAfterLoadZips(event) {
                 if (event.sourceID !== 'zipData' && !event.isSourceLoaded) return;
                 setStates();
-                mapgl.off('sourcedata', setAfterLoad);
+                mapgl.off('sourcedata', setAfterLoadZips);
             }
     
             // If `statesData` source is loaded, call `setStates()`.
             if (mapgl.isSourceLoaded('zipData')) {
                 setStates();
             } else {
-                mapgl.on('sourcedata', setAfterLoad);
+                mapgl.on('sourcedata', setAfterLoadZips);
             }
         }
 
         mapgl.on('style.load', () => {
-            console.log("Running Map: On Style Load")
             mapgl.setFog({
-                color: 'rgb(186, 210, 235)', // Lower atmosphere
+                'color': 'rgb(186, 210, 235)', // Lower atmosphere
                 'high-color': 'rgb(36, 92, 223)', // Upper atmosphere
                 'horizon-blend': 0.02, // Atmosphere thickness (default 0.2 at low zooms)
                 'space-color': 'rgb(11, 11, 25)', // Background color
                 'star-intensity': 0.6 // Background star brightness (default 0.35 at low zoooms )
             }); // Set the default atmosphere style
         });
-        
-        // Clear any errors from previous updates
-        this.clearErrors(queryResponse.fields);
 
-        if (queryResponse.fields.measures.length == 0 || queryResponse.fields.dimensions.length == 0) {
-            this.addError({ title: "No Measures or Dimensions", message: "This chart requires a measure and a dimension." });
-            return;
-        }
-
-        console.log("query response")
-        console.log(queryResponse)
-
-        if(this.__timesLoaded > 1) {
-            if(!determineNull(data, "dim_zi_map_vis.state")) {
-                activeLayer = "states-join"
-                createStatesViz();
-            } else if (!determineNull(data, "dim_zi_map_vis.cbsa")) {
-                activeLayer = "cbsas-join"
-                createCBSAsViz();
-            } else if (!determineNull(data, "dim_zi_map_vis.zip")) {
-                activeLayer = "zips-join"
-                createZipsViz();
+        function autozoomCBSA() {
+            if(mapgl.getSource('cbsaData') && mapgl.isSourceLoaded('cbsaData')) {
+                const fu = mapgl.queryRenderedFeatures({ layers: ['cbsas-join'] })
+                //const fu = mapgl.querySourceFeatures('cbsaData', { sourceLayer: 'boundaries_stats_2' })
+                const f = fu.filter((feature) => feature.state && feature.state.requestedKPI)
+                if (f.length > 0) {
+                    var bb = bbox({ type: 'FeatureCollection', features: f });
+                    mapgl.fitBounds(bb, {padding: 50});
+                    mapgl.off("idle", autozoomCBSA)
+                }
             }
         }
 
+        function autozoomZip() {
+            if(mapgl.getSource('zipData') && mapgl.isSourceLoaded('zipData')) {
+                const fu = mapgl.queryRenderedFeatures({ layers: ['zips-join'] })
+                //const fu = mapgl.querySourceFeatures('cbsaData', { sourceLayer: 'boundaries_stats_2' })
+                const f = fu.filter((feature) => feature.state && feature.state.requestedKPI)
+                if (f.length > 0) {
+                    var bb = bbox({ type: 'FeatureCollection', features: f });
+                    mapgl.fitBounds(bb, {padding: 50});
+                    mapgl.off("idle", autozoomZip)
+                }
+            }
+        }
+
+        runVisUpdate()
+
+        function runVisUpdate() {
+            mapgl.on("idle", autozoomCBSA)
+            mapgl.on("idle", autozoomZip)
+
+            const updateStates = () => {
+                const lookupData = filterLookupTable();
+
+                function filterLookupTable() {
+                    const lookupData = {};
+                    const searchData = stateData.adm1.data.all;
+        
+                    Object.keys(searchData).forEach((key) => {
+                        const featureData = searchData[key]
+                        if(featureData.iso_3166_1 === 'US') lookupData[featureData['name']] = featureData
+                    })
+                    return lookupData;
+                }
+
+                mapgl.removeFeatureState({source: "statesData", sourceLayer: 'boundaries_admin_1'})
+
+                for (let i = 0; i < data.length; i++) {
+                    const row = data[i]
+                    if(!lookupData.hasOwnProperty(row["dim_zi_map_vis.state"].value)) continue;
+                    mapgl.setFeatureState(
+                        {
+                            source: "statesData",
+                            sourceLayer: 'boundaries_admin_1',
+                            id: lookupData[row["dim_zi_map_vis.state"].value].feature_id
+                        },
+                        {
+                            requestedKPI: row[measureName].value,
+                            fipsCode: lookupData[row["dim_zi_map_vis.state"].value].unit_code,
+                            name: lookupData[row["dim_zi_map_vis.state"].value].name,
+                            hovered: false
+                        }
+                    )
+                }
+
+                const maxValue = getMaxState(lookupData)
+                createLegend(data, "dim_zi_map_vis.state", maxValue)
+
+                mapgl.setPaintProperty(
+                    'states-join', 
+                    'fill-color', 
+                    ['case', ['!=', ['feature-state', 'requestedKPI'], null], ['interpolate', ['linear'], ['feature-state', 'requestedKPI'], 1, 'rgba(255,237,234,0.6)', maxValue, 'rgba(179,18,31,0.6)'],'rgba(255, 255, 255, 0)']
+                )
+            }
+
+            const updateCBSAs = () => {
+                console.log("Updating CBSA's", data)
+                const lookupData = filterLookupTable();
+
+                function filterLookupTable() {
+                    const lookupData = {};
+                    const searchData = cbsaData.sta2.data.all
+        
+                    Object.keys(searchData).forEach((key) => {
+                        const featureData = searchData[key]
+                        if(featureData.iso_3166_1 === 'US') lookupData[featureData['name'].replace(",", "")] = featureData
+                    })
+                    return lookupData;
+                }
+
+                mapgl.removeFeatureState({source: "cbsaData", sourceLayer: 'boundaries_stats_2'})
+
+                for (let i = 0; i < data.length; i++) {
+                    const row = data[i]
+                    if(!lookupData.hasOwnProperty(row["dim_zi_map_vis.cbsa"].value)) continue;
+                    mapgl.setFeatureState(
+                        {
+                            source: "cbsaData",
+                            sourceLayer: 'boundaries_stats_2',
+                            id: lookupData[row["dim_zi_map_vis.cbsa"].value].feature_id
+                        },
+                        {
+                            requestedKPI: row[measureName].value,
+                            name: lookupData[row["dim_zi_map_vis.cbsa"].value].name,
+                            hovered: false
+                        }
+                    )
+                }
+
+                const maxValue = getMaxCBSA(lookupData)
+                createLegend(data, "dim_zi_map_vis.cbsa", maxValue)
+
+                mapgl.setPaintProperty(
+                    'cbsas-join', 
+                    'fill-color', 
+                    ['case', ['!=', ['feature-state', 'requestedKPI'], null], ['interpolate', ['linear'], ['feature-state', 'requestedKPI'], 1, 'rgba(255,237,234,0.6)', maxValue, 'rgba(179,18,31,0.6)'],'rgba(255, 255, 255, 0)']
+                )
+            }
+
+            const updateZips = () => {
+                const lookupData = filterLookupTable();
+
+                function filterLookupTable() {
+                    const lookupData = {};
+                    const searchData = zipData.pos4.data.all;
+        
+                    Object.keys(searchData).forEach(function (key) {
+                        const featureData = searchData[key];
+                        if(featureData.iso_3166_1 === 'US') {
+                            lookupData[featureData['unit_code']] = featureData;
+                        }
+                    })
+                    return lookupData;
+                }
+
+                mapgl.removeFeatureState({source: "zipData", sourceLayer: 'boundaries_postal_4'});
+
+                for (let i = 0; i < data.length; i++) {
+                    const row = data[i];
+                    if(!lookupData.hasOwnProperty(row["dim_zi_map_vis.zip"].value)) {
+                        continue;
+                    }
+                    mapgl.setFeatureState(
+                        {
+                            source: "zipData",
+                            sourceLayer: 'boundaries_postal_4',
+                            id: lookupData[row["dim_zi_map_vis.zip"].value].feature_id
+                        },
+                        {
+                            requestedKPI: row[measureName].value,
+                            name: lookupData[row["dim_zi_map_vis.zip"].value].unit_code,
+                            hovered: false
+                        }
+                    )
+                }
+
+                const maxValue = getMaxZip(lookupData);
+
+                createLegend(data, "dim_zi_map_vis.zip", maxValue);
+
+                mapgl.setPaintProperty(
+                    'zips-join', 
+                    'fill-color', 
+                    ['case', ['!=', ['feature-state', 'requestedKPI'], null], ['interpolate', ['linear'], ['feature-state', 'requestedKPI'], 1, 'rgba(255,237,234,0.6)', maxValue, 'rgba(179,18,31,0.6)'],'rgba(255, 255, 255, 0)']
+                );
+            }
+
+            if(mapgl.getSource('statesData') && mapgl.isSourceLoaded('statesData')) updateStates();
+            if(mapgl.getSource('cbsaData') && mapgl.isSourceLoaded('cbsaData')) updateCBSAs();
+            if(mapgl.getSource('zipData') && mapgl.isSourceLoaded('zipData')) updateZips();
+        }
+        
         done()
     }
 });

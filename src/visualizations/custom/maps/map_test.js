@@ -25,7 +25,6 @@ looker.plugins.visualizations.add({
         element.innerHTML = `
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
-            @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');
 
             * {
               box-sizing: border-box;
@@ -262,6 +261,86 @@ looker.plugins.visualizations.add({
                 border-radius: 17px;
                 background-color: #919191;
             }
+
+            .ctrl-tooltip {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                padding: 24px;
+                height: 240px;
+                background-color: #E8E7E7;
+                border-radius: 12px;
+                font-family: 'Roboto', sans-serif;
+                max-width: 550px;
+                width: 60%;
+            }
+
+            .ctrl-tooltip__background {
+                position: absolute;
+                background: rgba(0, 0, 0, 0.4);
+                width: 100%;
+                height: 100%;
+                z-index: 5;
+                display: none;
+            }
+
+            .ctrl-tooltip__background.active {
+                display: block;
+            }
+
+            .ctrl-tooltip h2 {
+                font-size: 16px;
+                line-height: 150%;
+                font-weight: 700;
+                margin-bottom: 24px;
+            }
+
+            .ctrl-tooltip p {
+                font-size: 16px;
+                line-height: 150%;
+                margin-bottom: 24px;
+            }
+
+            .ctrl-tooltip__top {
+                border-bottom: 1px solid #B8B8B8;
+                margin-bottom: 24px;
+            }
+
+            .ctrl-tooltip__bottom {
+                display: flex;
+                flex-flow: row-reverse nowrap;
+            }
+
+            .ctrl-tooltip button {
+                background: #000000;
+                border-radius: 8px;
+                color: #FDFAF3;
+                width: 175px;
+                padding: 15px;
+                text-align: center;
+                font-size: 16px;
+                line-height: 18px;
+                font-family: 'Roboto', sans-serif;
+                margin-left: auto;
+                cursor: pointer;
+            }
+
+            .tooltip-opener {
+                background: #B3121F;
+                width: 42px;
+                height: 42px;
+                border-radius: 50%;
+                color: white;
+                position: absolute;
+                left: 15px;
+                top: 15px;
+                z-index: 3;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                cursor: pointer
+            }
         </style>`;
 
         this.__currentLayer = "states-join";
@@ -332,6 +411,8 @@ looker.plugins.visualizations.add({
         this.__map.addControl(new mapboxgl.NavigationControl());
         this.__map.addControl(new mapboxgl.FullscreenControl());
 
+        this.__map.scrollZoom.disable();
+
         this.__map.on('load', () => {
             this.__map.addSource('statesData', {
                 type: 'vector',
@@ -368,6 +449,7 @@ looker.plugins.visualizations.add({
         @param done: function to call to tell Looker you've finished rendering
     */
     updateAsync: function (data, element, config, queryResponse, details, done) {
+        console.log("Updating in async", queryResponse)
         // Clear any errors from previous updates
        this.clearErrors(queryResponse.fields);
 
@@ -445,6 +527,34 @@ looker.plugins.visualizations.add({
             legendBox.id = "mapboxLegend";
             // Append the new legend to the entire visualization
             element.appendChild(legendBox);
+        }
+
+        const showHideMultiTooltip = () => document.getElementById("mainTooltip").classList.toggle("active")
+
+        const createMultiTooltip = () => {
+            const mapboxbox = document.getElementById("map")
+            const tooltipOpener = mapboxbox.appendChild(document.createElement('div'))
+            const tooltipBackground = mapboxbox.appendChild(document.createElement("div"))
+            const tooltipOuter = tooltipBackground.appendChild(document.createElement("div"))
+            const tooltipInner = tooltipOuter.appendChild(document.createElement("div"))
+            const tooltipTop = tooltipOuter.appendChild(document.createElement("div"))
+            const tooltipBottom = tooltipOuter.appendChild(document.createElement("div"))
+            const tooltipTitle = tooltipTop.appendChild(document.createElement("h2"))
+            const tooltipDescription = tooltipTop.appendChild(document.createElement("p"))
+            const tooltipButton = tooltipBottom.appendChild(document.createElement("button"))
+            tooltipBackground.className = "ctrl-tooltip__background"
+            tooltipBackground.id = "mainTooltip"
+            tooltipOuter.className = "ctrl-tooltip"
+            tooltipInner.className = "ctrl-tooltip__inner"
+            tooltipTop.className = "ctrl-tooltip__top"
+            tooltipBottom.className = "ctrl-tooltip__bottom"
+            tooltipTitle.innerHTML = "Keyboard Shortcut"
+            tooltipDescription.innerHTML = "Press and hold the Ctrl key while clicking on subsequent locations to select multiple features, before selecting the last feature of your preffered subset, release the Ctrl key."
+            tooltipButton.innerHTML = "Got It"
+            tooltipButton.addEventListener("click", showHideMultiTooltip)
+            tooltipOpener.className = "tooltip-opener"
+            tooltipOpener.innerHTML = '<i class="fa-solid fa-circle-info fa-2x" aria-hidden="true"></i>'
+            tooltipOpener.addEventListener("click", showHideMultiTooltip)
         }
 
         /* Runs an update function when a user removes or adds a feature to the selection list.
@@ -588,10 +698,10 @@ looker.plugins.visualizations.add({
                     if(nextLayerName) {
                         // Get the grouping name of the next layer, returns String no undefined
                         const nextLayerGrouping = thisLayerNames[thisLayerNames.findIndex((element) => element.name === nextLayerName)].groupingName
-                        // Automatically change the active layer to the specific layer supplied
-                        autoChangeActive(nextLayerName)
                         // Update the selected grouping in the GTM Frontend to swap granularities
                         changeGranularity(nextLayerGrouping)
+                        // Automatically change the active layer to the specific layer supplied
+                        autoChangeActive(nextLayerName)
                     }
                 }
             }
@@ -602,6 +712,8 @@ looker.plugins.visualizations.add({
             createStatesViz();
             createCBSAsViz();
             createZipsViz();
+            createMultiTooltip();
+            showHideMultiTooltip();
         });
 
         // When the map goes idle, attach an event listener to the granularity buttons to change to that granularity
@@ -654,6 +766,7 @@ looker.plugins.visualizations.add({
 
                 if(filteredDown.length > 0) {
                     mapgl.setLayoutProperty(e.target.id, 'visibility', 'visible');
+                    console.log("filteredDown[0].groupingName", filteredDown[0].groupingName)
                     changeGranularity(filteredDown[0].groupingName)
                 }
 
@@ -1219,6 +1332,7 @@ looker.plugins.visualizations.add({
             }
 
             const updateCBSAs = () => {
+                console.log("Updating CBSA's", data)
                 const lookupData = filterLookupTable();
 
                 function filterLookupTable() {
@@ -1313,6 +1427,7 @@ looker.plugins.visualizations.add({
             if(mapgl.getSource('cbsaData') && mapgl.isSourceLoaded('cbsaData')) updateCBSAs();
             if(mapgl.getSource('zipData') && mapgl.isSourceLoaded('zipData')) updateZips();
         }
+        
         done()
     }
 });
