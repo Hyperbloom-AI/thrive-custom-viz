@@ -17,7 +17,6 @@ var webpackConfig = {
     line: './src/visualizations/recycleable/line_charts/line.js',
     custom_pbg_table: './src/visualizations/custom/tables/custom_pbg_table.js',
     map_test: './src/visualizations/custom/maps/map_test.js',
-    map_min: './src/visualizations/custom/maps/map_minimal.js',
   },
   output: {
     filename: "[name].js",

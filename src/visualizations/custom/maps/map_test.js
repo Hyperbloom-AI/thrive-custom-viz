@@ -6,22 +6,27 @@ import regeneratorRuntime from "regenerator-runtime";
 import bbox from '@turf/bbox';
 import "core-js/stable";
 
+// DEV NOTE: Mikel from mapbox asked me to add this to destroy a non-blocking recurring console error
 if (mapboxgl.version.indexOf('2.9.') === 0) Object.defineProperty(window, 'caches', { value: undefined });
 
-function numberWithCommas(x) {
-    if(!x) return undefined;
-    x = x.toFixed(0);
-    var parts = x.toString().split(".");
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return parts.join(".");
-};
+/* DEV NOTE: In an attempt to make this function run as fast as possible, I switch from using `.toString()` to using '' + x which is 8% faster ,
+This function is used to convert long integers into strings with commas between every three numbers in reverse.
+Params:
+    @param x: a number, specifically an integer
+*/
+const numberWithCommas = (x) => x ? (('' + x.toFixed(0)).split(".")[0]).replace(/\B(?=(\d{3})+(?!\d))/g, ",") : undefined;
 
+// Add the visualization to the looker plugins, self-explanatory. This object is required for all custom visualizations and should follow this top level layout
 looker.plugins.visualizations.add({
     id: "thrive_custom_special_granularity_map",
     label: "Custom Layered Mapbox Map",
     // Set up the initial state of the visualization
     create: function (element, config) {
-        // Insert a <style> tag with some styles we'll use later.
+        // Create the link element to add map stylings
+        var link = document.head.appendChild(document.createElement('link'));
+        link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.css';
+        link.rel = 'stylesheet';
+        // Insert a <style> tag with the styles for the map and it's related icons and sections.
         element.innerHTML = `
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
@@ -300,64 +305,38 @@ looker.plugins.visualizations.add({
                 opacity: 0.8
             }
         </style>`;
-
-        this.__currentLayer = "states-join";
+        
+        // This is an object containing the information to refer to for groupingNames and layerNames
         this.__LAYERNAMES = [
-            {
-                name: "states-join",
-                groupingName: "State"
-            }, 
-            {
-                name: "cbsas-join",
-                groupingName: "CBSA"
-            },
-            {
-               name: "zips-join",
-               groupingName: "Zipcode"
-            }
+            { name: "states-join", groupingName: "State" }, 
+            { name: "cbsas-join", groupingName: "CBSA" }, 
+            { name: "zips-join", groupingName: "Zipcode" }
         ];
-
-        // Create the top layer selector bar
-        //###################################################################################//
-
-        this.__mapStatesButton = document.createElement('button');
+        // Create and style all the elements that make up the major components of the map and surrounding UI.
+        this.__mapPaginatorWrapper = element.appendChild(document.createElement('div'));
+        this.__selectedLocalesWrapper = element.appendChild(document.createElement('div'));
+        this.__mapBox = element.appendChild(document.createElement('div'));
+        this.__mapStatesButton = this.__mapPaginatorWrapper.appendChild(document.createElement('button'));
+        this.__mapCBSAsButton = this.__mapPaginatorWrapper.appendChild(document.createElement('button'));
+        this.__mapZipCodesButton = this.__mapPaginatorWrapper.appendChild(document.createElement('button'));
+        this.__mapPaginatorWrapper.className = "map-paginator__wrapper";
+        this.__selectedLocalesWrapper.className = "selected-locales__wrapper";
         this.__mapStatesButton.innerHTML = "States";
         this.__mapStatesButton.className = "map-paginator active";
         this.__mapStatesButton.id = "states-join";
-
-        this.__mapCBSAsButton = document.createElement('button');
         this.__mapCBSAsButton.innerHTML = "CBSAs";
         this.__mapCBSAsButton.className = "map-paginator";
         this.__mapCBSAsButton.id = "cbsas-join";
-
-        this.__mapZipCodesButton = document.createElement('button');
         this.__mapZipCodesButton.innerHTML = "Zip Codes";
         this.__mapZipCodesButton.className = "map-paginator";
         this.__mapZipCodesButton.id = "zips-join";
-
-        this.__mapPaginatorWrapper = document.createElement('div');
-        this.__mapPaginatorWrapper.className = "map-paginator__wrapper";
-
-        this.__mapPaginatorWrapper.appendChild(this.__mapStatesButton);
-        this.__mapPaginatorWrapper.appendChild(this.__mapCBSAsButton);
-        this.__mapPaginatorWrapper.appendChild(this.__mapZipCodesButton);
-
-        element.appendChild(this.__mapPaginatorWrapper);
-
-        this.__selectedLocalesWrapper = document.createElement('div');
-        this.__selectedLocalesWrapper.className = "selected-locales__wrapper";
-        element.appendChild(this.__selectedLocalesWrapper);
-
-        //###################################################################################//
-
-        this.__mapBox = document.createElement('div');
         this.__mapBox.style.height = '100%';
         this.__mapBox.style.width = '100%';
         this.__mapBox.id = "map";
 
-        element.appendChild(this.__mapBox);
-
+        // Set the access Token to access the Mapbox GL API
         mapboxgl.accessToken = 'pk.eyJ1IjoiZHVuY2FuY2ZyYXNlciIsImEiOiJjbDRvbDlmZWQwMGdzM2ZxazZybTVkdDQ0In0.xL5_LBkos5tYRbLxR0tQRQ';
+        // Initialize the map with the light style, center it on the USA, set a minumum zoom level and turn off scroll interaction.
         this.__map = new mapboxgl.Map({
             container: 'map',
             style: 'mapbox://styles/mapbox/light-v10',
@@ -365,35 +344,18 @@ looker.plugins.visualizations.add({
             zoom: 3.6,
             minZoom: 2,
             scrollZoom: false,
-            //projection: 'globe'
+            dragRotate: false,
+            keyboard: false,
+            maxPitch: 0,
+            touchPitch: false
         });
-
+        // Add the +/- Map zoom controls. This also adds a rotation control though it's not super useful
         this.__map.addControl(new mapboxgl.NavigationControl());
-
-        this.__map.on('load', () => {
-            this.__map.addSource('statesData', {
-                type: 'vector',
-                url: 'mapbox://mapbox.boundaries-adm1-v3'
-            }).addSource('cbsaData', {
-                type: 'vector',
-                url: 'mapbox://mapbox.boundaries-sta2-v3'
-            }).addSource('zipData', {
-                type: 'vector',
-                url: 'mapbox://mapbox.boundaries-pos4-v3'
-            });
-        });
-
-
-        var link = document.createElement('link');
-        link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.css';
-        link.rel = 'stylesheet';
-
-        var script = document.createElement('script');
+        // When the map first loads, add all the sources which dictate the behavior of data added to the map
+        this.__map.on('load', () => this.__map.addSource('statesData', { type: 'vector', url: 'mapbox://mapbox.boundaries-adm1-v3'}).addSource('cbsaData', { type: 'vector', url: 'mapbox://mapbox.boundaries-sta2-v3' }).addSource('zipData', { type: 'vector', url: 'mapbox://mapbox.boundaries-pos4-v3' }));
+        var script = document.head.appendChild(document.createElement('script'));
         script.src = 'https://kit.fontawesome.com/f2060bf509.js';
         script.crossOrigin = "anonymous";
-
-        document.head.appendChild(link);
-        document.head.appendChild(script);
     },
 
     /* Render in response to the data or settings changing
@@ -406,7 +368,6 @@ looker.plugins.visualizations.add({
         @param done: function to call to tell Looker you've finished rendering
     */
     updateAsync: function (data, element, config, queryResponse, details, done) {
-        console.log("Updating in async", queryResponse)
         // Clear any errors from previous updates
        this.clearErrors(queryResponse.fields);
 
@@ -674,11 +635,7 @@ looker.plugins.visualizations.add({
         });
 
         // When the map goes idle, attach an event listener to the granularity buttons to change to that granularity
-        mapgl.on('idle', () => {
-            this.__mapStatesButton.addEventListener("click", changeActive);
-            this.__mapCBSAsButton.addEventListener("click", changeActive);
-            this.__mapZipCodesButton.addEventListener("click", changeActive);
-        })
+        mapgl.on('idle', () => document.querySelectorAll('.map-paginator').forEach(button => button.addEventListener("click", changeActive)))
 
         /* As Compared to the next function, this function automatically changes which layer is active rather than determining
         What was clicked.
