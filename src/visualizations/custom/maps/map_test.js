@@ -20,6 +20,48 @@ const numberWithCommas = (x) => x ? (('' + x.toFixed(0)).split(".")[0]).replace(
 looker.plugins.visualizations.add({
     id: "thrive_custom_special_granularity_map",
     label: "Custom Layered Mapbox Map",
+    options: {
+        southwest_point: {
+            type: "array",
+            label: "Southwest Corner (Bounding Box)",
+            placeholder: "Long, Lat",
+            default: ['-175.791110603', '13.91619'], 
+        },
+        northeast_point: {
+            type: "array",
+            label: "Northeast Corner (Bounding Box)",
+            placeholder: "Long, Lat",
+            default: ['-61.96466', '73.3577635769'], 
+        },
+        default_center: {
+            type: "array",
+            label: "Default Map Center",
+            placeholder: "Long, Lat",
+            default: [-98.5795, 38.7]
+        },
+        default_zoom: {
+            type: "number",
+            label: "Default Map Zoom",
+            placeholder: "Integer or Float 0-24",
+            default: 3.6
+        },
+        preset_style: {
+            type: "string",
+            label: "Preset Mapbox Style",
+            placeholder: "mapbox://styles/mapbox/<style-name e.g. light-v10>",
+            default: "mapbox://styles/mapbox/light-v10"
+        },
+        zoom_scroll: {
+            type: "boolean",
+            label: "Scroll Zoom Interaction",
+            default: false
+        },
+        keyboard_shortcuts: {
+            type: "boolean",
+            label: "Turn on keyboard shortcuts",
+            default: false
+        }
+    },
     // Set up the initial state of the visualization
     create: function (element, config) {
         // Create the link element to add map stylings
@@ -339,15 +381,16 @@ looker.plugins.visualizations.add({
         // Initialize the map with the light style, center it on the USA, set a minumum zoom level and turn off scroll interaction.
         this.__map = new mapboxgl.Map({
             container: 'map',
-            style: 'mapbox://styles/mapbox/light-v10',
-            center: [-98.5795, 38.7],
-            zoom: 3.6,
+            style: config.preset_style ? config.preset_style : this.options.preset_style.default,
+            center: config.default_center ? config.default_center : this.options.default_center.default,
+            zoom: config.default_zoom ? config.default_zoom : this.options.default_zoom.default,
             minZoom: 2,
-            scrollZoom: false,
+            scrollZoom: config.zoom_scroll ? config.zoom_scroll : this.options.zoom_scroll.default,
             dragRotate: false,
-            keyboard: false,
+            keyboard: config.keyboard_shortcuts ? config.keyboard_shortcuts : this.options.keyboard_shortcuts.default,
             maxPitch: 0,
-            touchPitch: false
+            touchPitch: false,
+            maxBounds: new mapboxgl.LngLatBounds(config.southwest_point ? config.southwest_point : this.options.southwest_point.default, config.northeast_point ? config.northeast_point : this.options.northeast_point.default)
         });
         // Add the +/- Map zoom controls. This also adds a rotation control though it's not super useful
         this.__map.addControl(new mapboxgl.NavigationControl());
@@ -368,6 +411,7 @@ looker.plugins.visualizations.add({
         @param done: function to call to tell Looker you've finished rendering
     */
     updateAsync: function (data, element, config, queryResponse, details, done) {
+        console.log("configAsync", config)
         // Clear any errors from previous updates
        this.clearErrors(queryResponse.fields);
 
@@ -401,11 +445,7 @@ looker.plugins.visualizations.add({
         // Tracks feature currently being hovered, DEV NOTE: To increase conciseness this could be altered to `hoveredFeatureId`, set to null
         let hoveredStateId = null; // Tracks hovered state and updates with popup
         // The object responsible for capturing selected features, DEV NOTE: To increase conciseness this could be altered to `selectedFeatureNames`, set to object of empty arrays
-        let filteredStateNames = {
-            "states-join": [],
-            "cbsas-join": [],
-            "zips-join": []
-        };
+        let filteredStateNames = { "states-join": [], "cbsas-join": [], "zips-join": []};
 
         /* Creates legend for the map
         Params:
@@ -554,7 +594,7 @@ looker.plugins.visualizations.add({
             if(totalCount === 0) {
                 autoChangeActive("states-join");
                 changeGranularity("State");
-                mapgl.easeTo({ center: [-98.5795, 38.7], zoom: 3.6, duration: 1000 })
+                mapgl.easeTo({ center: config.default_center, zoom: config.default_zoom, duration: 1000 })
             }
             moreWrapper.addEventListener("click", function() {
                 if(moreWrapper.classList.contains("active")) {
