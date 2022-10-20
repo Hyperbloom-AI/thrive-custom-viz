@@ -511,7 +511,7 @@ looker.plugins.visualizations.add({
             tooltipTop.className = "ctrl-tooltip__top"
             tooltipBottom.className = "ctrl-tooltip__bottom"
             tooltipTitle.innerHTML = "Keyboard Shortcut"
-            tooltipDescription.innerHTML = "Press and hold the Ctrl key (or Cmd key on Mac) while clicking on subsequent locations to select multiple features, before selecting the last feature of your preffered subset, release the Ctrl or Cmd key."
+            tooltipDescription.innerHTML = "To add an additional region to the filter, hold down the Command (Mac) or Control (Windows) key on your keyboard while clicking on additional data points."
             tooltipButton.innerHTML = "Got It"
             tooltipButton.addEventListener("click", showHideMultiTooltip)
             tooltipOpener.className = "tooltip-opener"
