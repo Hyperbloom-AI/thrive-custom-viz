@@ -444,6 +444,8 @@ looker.plugins.visualizations.add({
         // The object responsible for capturing selected features, DEV NOTE: To increase conciseness this could be altered to `selectedFeatureNames`, set to object of empty arrays
         let filteredStateNames = { "states-join": [], "cbsas-join": [], "zips-join": []};
 
+        let options = this.options;
+
         /* Creates legend for the map
         Params:
             @param data: contains current data object at runtime
@@ -598,7 +600,9 @@ looker.plugins.visualizations.add({
             if(totalCount === 0) {
                 autoChangeActive("states-join");
                 changeGranularity("State");
-                mapgl.easeTo({ center: config.default_center, zoom: config.default_zoom, duration: 1000 })
+                const center = config.default_center ? config.default_center : options.default_center.default;
+                const zoom = config.default_zoom ? config.default_zoom : options.default_zoom.default;
+                mapgl.easeTo({ center: center, zoom: zoom, duration: 1000 });
             }
             moreWrapper.addEventListener("click", function() {
                 if(moreWrapper.classList.contains("active")) {
