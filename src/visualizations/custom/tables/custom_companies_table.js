@@ -269,18 +269,10 @@ looker.plugins.visualizations.add({
     },
     // Render in response to the data or settings changing
     updateAsync: function (data, element, config, queryResponse, details, done) {
+        while (this.__tableBody.firstChild) this.__tableBody.removeChild(this.__tableBody.firstChild)
+        while (this.__title_button__wrapper.firstChild) this.__title_button__wrapper.removeChild(this.__title_button__wrapper.firstChild)
 
-        while (this.__tableBody.firstChild) {
-            this.__tableBody.removeChild(this.__tableBody.firstChild)
-        }
-
-        while (this.__title_button__wrapper.firstChild) {
-            this.__title_button__wrapper.removeChild(this.__title_button__wrapper.firstChild)
-        }
-
-        function throwMessage() {
-            window.parent.parent.postMessage({ message: "sendCompanyData", value: data }, "*")
-        }
+        const throwMessage = () => window.parent.parent.postMessage({ message: "sendCompanyData", value: data }, "*")
         // Clear any errors from previous updates
         this.clearErrors(queryResponse.fields);
 

@@ -411,9 +411,8 @@ looker.plugins.visualizations.add({
         @param done: function to call to tell Looker you've finished rendering
     */
     updateAsync: function (data, element, config, queryResponse, details, done) {
-        console.log("configAsync", config)
         // Clear any errors from previous updates
-       this.clearErrors(queryResponse.fields);
+        this.clearErrors(queryResponse.fields);
 
         //When no dimensions and/or no measures are present the viz stops updating and displays an error
         if (queryResponse.fields.measures.length < 1 || queryResponse.fields.dimensions.length < 1) {
@@ -436,8 +435,6 @@ looker.plugins.visualizations.add({
         let mapgl = this.__map;
         // Find name of measure, as measure is requested KPI, which is dynamic, returns String
         const measureName = queryResponse.fields.measures[0].name;
-        // Find label of measure, as measure is requested KPI, which is dynamic. This prints to UI, returns String
-        const measureLabel = queryResponse.fields.measures[0].label_short;
         // Move HTML DOM element from `this` to permanent variable, returns HTML DOM element
         const localesWrapper = this.__selectedLocalesWrapper;
         // Move Object from `this` to permanent variable, returns Object
@@ -487,9 +484,16 @@ looker.plugins.visualizations.add({
             element.appendChild(legendBox);
         }
 
-        const showHideMultiTooltip = () => document.getElementById("mainTooltip").classList.toggle("active")
+        const showHideMultiTooltip = (sh) => {
+            if(sh === "show") {
+                document.getElementById("mainTooltip").classList.add("active") 
+                return;
+            }
+            document.getElementById("mainTooltip").classList.toggle("active")
+        }
 
         const createMultiTooltip = () => {
+            if(document.getElementById("mainTooltip")) return
             const mapboxbox = document.getElementById("map")
             const tooltipOpener = mapboxbox.appendChild(document.createElement('div'))
             const tooltipBackground = mapboxbox.appendChild(document.createElement("div"))
@@ -645,7 +649,7 @@ looker.plugins.visualizations.add({
                 // Updates the pucks that show feature selection bottom-right of the map, returns null
                 runSelectionUpdate(localesWrapper, layerName);
                 // If the ctrl key is not selected, send data for filter update
-                if(!e.originalEvent.ctrlKey) {
+                if(!e.originalEvent.ctrlKey && !e.originalEvent.metaKey && e.originalEvent.keyCode !== 91 && e.originalEvent.keyCode !== 224 ) {
                     // Send data to GTM Frontend for a looker data refresh, returns null
                     throwMessage(filteredStateNames)
                     // Get layer names from filteredStateNames with Object.keys(), Returns array: ["layerX", "layerY", "layerZ"]
@@ -671,7 +675,7 @@ looker.plugins.visualizations.add({
             createCBSAsViz();
             createZipsViz();
             createMultiTooltip();
-            showHideMultiTooltip();
+            showHideMultiTooltip("show");
         });
 
         // When the map goes idle, attach an event listener to the granularity buttons to change to that granularity
@@ -720,7 +724,6 @@ looker.plugins.visualizations.add({
 
                 if(filteredDown.length > 0) {
                     mapgl.setLayoutProperty(e.target.id, 'visibility', 'visible');
-                    console.log("filteredDown[0].groupingName", filteredDown[0].groupingName)
                     changeGranularity(filteredDown[0].groupingName)
                 }
 
@@ -779,6 +782,8 @@ looker.plugins.visualizations.add({
             }
             const maxValue = getMaxState(lookupData)
 
+            if(mapgl.getLayer('states-join')) return;
+
             mapgl.addLayer({
                 id: 'states-join',
                 type: 'fill',
@@ -811,6 +816,8 @@ looker.plugins.visualizations.add({
                     const realCoords = [e.lngLat.lng, e.lngLat.lat]
                     const reqKPI = e.features[0].state.requestedKPI;
                     const state = e.features[0].state.name
+                    const label = e.features[0].state.label
+
 
                     const description = `
                     <div class="popup-inner">
@@ -821,7 +828,7 @@ looker.plugins.visualizations.add({
                             <div class="popup-inner__horizontal">
                                 <div class="popup-inner__horizontal-inner__vertical">
                                     <div class="descriptor__wrapper">
-                                        <h4 class="descriptor">${measureLabel}</h4>
+                                        <h4 class="descriptor">${label}</h4>
                                     </div>
                                     <div class="number__wrapper">
                                         <h4 class="number">${numberWithCommas(reqKPI)}</h4>
@@ -883,7 +890,8 @@ looker.plugins.visualizations.add({
                             requestedKPI: row[measureName].value,
                             fipsCode: lookupData[row["dim_zi_map_vis.state"].value].unit_code,
                             name: lookupData[row["dim_zi_map_vis.state"].value].name,
-                            hovered: false
+                            hovered: false,
+                            label: queryResponse.fields.measures[0].label_short
                         }
                     )
                 }
@@ -928,6 +936,8 @@ looker.plugins.visualizations.add({
 
             const maxValue = getMaxCBSA(lookupData)
 
+            if(mapgl.getLayer('cbsas-join')) return;
+
             mapgl.addLayer({
                 id: 'cbsas-join',
                 type: 'fill',
@@ -961,6 +971,7 @@ looker.plugins.visualizations.add({
                     const realCoords = [e.lngLat.lng, e.lngLat.lat]
                     const reqKPI = e.features[0].state.requestedKPI;
                     const cbsa = e.features[0].state.name
+                    const label = e.features[0].state.label
 
                     const description = `
                     <div class="popup-inner">
@@ -971,7 +982,7 @@ looker.plugins.visualizations.add({
                             <div class="popup-inner__horizontal">
                                 <div class="popup-inner__horizontal-inner__vertical">
                                     <div class="descriptor__wrapper">
-                                        <h4 class="descriptor">${measureLabel}</h4>
+                                        <h4 class="descriptor">${label}</h4>
                                     </div>
                                     <div class="number__wrapper">
                                         <h4 class="number">${numberWithCommas(reqKPI)}</h4>
@@ -1031,7 +1042,8 @@ looker.plugins.visualizations.add({
                         {
                             requestedKPI: row[measureName].value,
                             name: lookupData[row["dim_zi_map_vis.cbsa"].value].name,
-                            hovered: false
+                            hovered: false,
+                            label: queryResponse.fields.measures[0].label_short
                         }
                     )
                 }
@@ -1073,6 +1085,8 @@ looker.plugins.visualizations.add({
 
             const maxValue = getMaxZip(lookupData)
 
+            if(mapgl.getLayer('zips-join')) return;
+
             mapgl.addLayer({
                 id: 'zips-join',
                 type: 'fill',
@@ -1106,6 +1120,7 @@ looker.plugins.visualizations.add({
                     const realCoords = [e.lngLat.lng, e.lngLat.lat]
                     const reqKPI = e.features[0].state.requestedKPI;
                     const zip = e.features[0].state.name
+                    const label = e.features[0].state.label
 
                     const description = `
                     <div class="popup-inner">
@@ -1116,7 +1131,7 @@ looker.plugins.visualizations.add({
                             <div class="popup-inner__horizontal">
                                 <div class="popup-inner__horizontal-inner__vertical">
                                     <div class="descriptor__wrapper">
-                                        <h4 class="descriptor">${measureLabel}</h4>
+                                        <h4 class="descriptor">${label}</h4>
                                     </div>
                                     <div class="number__wrapper">
                                         <h4 class="number">${numberWithCommas(reqKPI)}</h4>
@@ -1176,7 +1191,8 @@ looker.plugins.visualizations.add({
                         {
                             requestedKPI: row[measureName].value,
                             name: lookupData[row["dim_zi_map_vis.zip"].value].unit_code,
-                            hovered: false
+                            hovered: false,
+                            label: queryResponse.fields.measures[0].label_short
                         }
                     )
                 }
@@ -1270,7 +1286,8 @@ looker.plugins.visualizations.add({
                             requestedKPI: row[measureName].value,
                             fipsCode: lookupData[row["dim_zi_map_vis.state"].value].unit_code,
                             name: lookupData[row["dim_zi_map_vis.state"].value].name,
-                            hovered: false
+                            hovered: false,
+                            label: queryResponse.fields.measures[0].label_short
                         }
                     )
                 }
@@ -1286,7 +1303,6 @@ looker.plugins.visualizations.add({
             }
 
             const updateCBSAs = () => {
-                console.log("Updating CBSA's", data)
                 const lookupData = filterLookupTable();
 
                 function filterLookupTable() {
@@ -1314,7 +1330,8 @@ looker.plugins.visualizations.add({
                         {
                             requestedKPI: row[measureName].value,
                             name: lookupData[row["dim_zi_map_vis.cbsa"].value].name,
-                            hovered: false
+                            hovered: false,
+                            label: queryResponse.fields.measures[0].label_short
                         }
                     )
                 }
@@ -1361,7 +1378,8 @@ looker.plugins.visualizations.add({
                         {
                             requestedKPI: row[measureName].value,
                             name: lookupData[row["dim_zi_map_vis.zip"].value].unit_code,
-                            hovered: false
+                            hovered: false,
+                            label: queryResponse.fields.measures[0].label_short
                         }
                     )
                 }
@@ -1381,7 +1399,6 @@ looker.plugins.visualizations.add({
             if(mapgl.getSource('cbsaData') && mapgl.isSourceLoaded('cbsaData')) updateCBSAs();
             if(mapgl.getSource('zipData') && mapgl.isSourceLoaded('zipData')) updateZips();
         }
-        
         done()
     }
 });
